@@ -303,7 +303,6 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'app_state.dart';
 import 'bookmark.dart';
 import 'bookmark_page.dart';
-import 'downloaded_pdf_list.dart';
 import 'grid_page.dart';
 import 'highlights_page.dart';
 import 'notes_page.dart';
@@ -343,7 +342,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   LocalHistoryEntry? _historyEntry;
 
   // Initialize SQLite DB
-  Future<void> _initializeDb() async {
+  Future<void> initializeDb() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = documentsDirectory.path + "app_data.db";
     Database database = await openDatabase(
@@ -369,7 +368,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     });
   }
 
-  void _ensureHistoryEntry() {
+  void ensureHistoryEntry() {
     if (_historyEntry == null) {
       final ModalRoute<dynamic>? route = ModalRoute.of(context);
       if (route != null) {
@@ -400,6 +399,115 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   late List<int> myanno;
 
   // HIGLIGHT
+  // Widget _buildPdfViewer() {
+  //   return Stack(children: [
+  //     Column(
+  //       children: [
+  //         Expanded(
+  //           child: SfPdfViewer.file(
+  //             File(pdfPath),
+  //             controller: _pdfViewerController,
+  //             key: _pdfViewerKey,
+  //             pageLayoutMode: PdfPageLayoutMode.single,
+  //
+  //             onAnnotationAdded: (Annotation annotation) {
+  //               print(annotation);
+  //               // print("hellojyghnyhy ${_pdfViewerController.exportFormData(dataFormat: DataFormat.xfdf )}");
+  //               Provider.of<AppState>(context, listen: false)
+  //                   .addHighlight(
+  //                 _pdfViewerController.pageNumber,
+  //                 Provider.of<AppState>(context, listen: false).raam,
+  //               );
+  //
+  //             },
+  //             onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
+  //               print("fjowejfowijfoqjfo ${_pdfViewerKey.currentState?.getSelectedTextLines()}");
+  //               final annotations = details.globalSelectedRegion;
+  //               print(annotations);
+  //               if (details.selectedText != null && details.selectedText!.isNotEmpty) {
+  //                 setState(() {
+  //                   _selectionDetails = details;
+  //                   Provider.of<AppState>(context, listen: false)
+  //                       .updateData(_selectionDetails!.selectedText as String);
+  //
+  //                 });
+  //
+  //               }
+  //             },
+  //           ),
+  //         ),
+  //
+  //
+  //
+  //
+  // // REMOVE HIGLIGHT
+  //
+  //
+  //         Visibility(
+  //           visible: _textSearchKey.currentState?.showToast ?? false,
+  //           child: Align(
+  //             alignment: Alignment.center,
+  //             child: Flex(
+  //               direction: Axis.horizontal,
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: <Widget>[
+  //                 Container(
+  //                   padding:
+  //                   const EdgeInsets.only(left: 15, top: 7, right: 15, bottom: 7),
+  //                   decoration: BoxDecoration(
+  //                     color: Colors.grey[600],
+  //                     borderRadius: const BorderRadius.all(
+  //                       Radius.circular(16.0),
+  //                     ),
+  //                   ),
+  //                   child: const Text(
+  //                     'No result',
+  //                     textAlign: TextAlign.center,
+  //                     style: TextStyle(
+  //                         fontFamily: 'Roboto',
+  //                         fontSize: 16,
+  //                         color: Colors.white),
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //         if (_selectionDetails != null &&
+  //             _selectionDetails!.selectedText != null)
+  //           Container(
+  //             color: Colors.grey[200],
+  //             child: Row(
+  //               children: [
+  //                 IconButton(
+  //                   icon: Icon(Icons.highlight),
+  //                   onPressed: () {
+  //                     Provider.of<AppState>(context, listen: false)
+  //                         .addHighlight(
+  //                       _pdfViewerController.pageNumber!,
+  //                       _selectionDetails!.selectedText!,
+  //                     );
+  //                     ScaffoldMessenger.of(context).showSnackBar(
+  //                         SnackBar(content: Text("Text highlighted!")));
+  //                     _selectionDetails = null;
+  //                     setState(() {});
+  //                   },
+  //                 ),
+  //                 IconButton(
+  //                   icon: Icon(Icons.note_add),
+  //                   onPressed: () {
+  //                     _addNoteDialog(_pdfViewerController.pageNumber!,
+  //                         _selectionDetails!.selectedText!);
+  //                   },
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //       ],
+  //     ),
+  //   ]);
+  // }
+
   Widget _buildPdfViewer() {
     return Stack(children: [
       Column(
@@ -411,38 +519,41 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               key: _pdfViewerKey,
               pageLayoutMode: PdfPageLayoutMode.single,
 
+              // When annotation is added (e.g., highlight)
               onAnnotationAdded: (Annotation annotation) {
-                print(annotation);
-                // print("hellojyghnyhy ${_pdfViewerController.exportFormData(dataFormat: DataFormat.xfdf )}");
-                Provider.of<AppState>(context, listen: false)
-                    .addHighlight(
+                print("[Highlight Specifications] Annotation Added: $annotation");
+                print("[Highlight Specifications] Current Page Number: ${_pdfViewerController.pageNumber}");
+                print("[Highlight Specifications] Raam Value: ${Provider.of<AppState>(context, listen: false).raam}");
+
+                // Update the state with the new highlight
+                Provider.of<AppState>(context, listen: false).addHighlight(
                   _pdfViewerController.pageNumber,
                   Provider.of<AppState>(context, listen: false).raam,
                 );
-
               },
+
+              // When text selection is changed
               onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
-                print("fjowejfowijfoqjfo ${_pdfViewerKey.currentState?.getSelectedTextLines()}");
-                final annotations = details.globalSelectedRegion;
-                print(annotations);
+                print("[Text Selection Specifications] Text Selection Changed!");
+                print("[Text Selection Specifications] Selected Text: ${details.selectedText}");
+                print("[Text Selection Specifications] Global Selected Region: ${details.globalSelectedRegion}");
+                print("[Text Selection Specifications] Text Selection Details: ${details.toString()}");
+
                 if (details.selectedText != null && details.selectedText!.isNotEmpty) {
                   setState(() {
                     _selectionDetails = details;
+                    print("[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
+
+                    // Update the state with the selected text
                     Provider.of<AppState>(context, listen: false)
                         .updateData(_selectionDetails!.selectedText as String);
-
                   });
-
                 }
               },
             ),
           ),
 
-
-          // REMOVE HIGLIGHT
-
-
-
+          // REMOVE HIGHLIGHT
           Visibility(
             visible: _textSearchKey.currentState?.showToast ?? false,
             child: Align(
@@ -452,29 +563,28 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Container(
-                    padding:
-                    EdgeInsets.only(left: 15, top: 7, right: 15, bottom: 7),
+                    padding: const EdgeInsets.only(left: 15, top: 7, right: 15, bottom: 7),
                     decoration: BoxDecoration(
                       color: Colors.grey[600],
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(16.0),
-                      ),
+                      borderRadius: const BorderRadius.all(Radius.circular(16.0)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'No result',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 16,
-                          color: Colors.white),
+                        fontFamily: 'Roboto',
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          if (_selectionDetails != null &&
-              _selectionDetails!.selectedText != null)
+
+          // Display the row of icons (highlight and add note)
+          if (_selectionDetails != null && _selectionDetails!.selectedText != null)
             Container(
               color: Colors.grey[200],
               child: Row(
@@ -482,11 +592,15 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   IconButton(
                     icon: Icon(Icons.highlight),
                     onPressed: () {
-                      Provider.of<AppState>(context, listen: false)
-                          .addHighlight(
+                      print("[Highlight Specifications] Highlighting Text: ${_selectionDetails!.selectedText}");
+
+                      // Add the highlight to the app state
+                      Provider.of<AppState>(context, listen: false).addHighlight(
                         _pdfViewerController.pageNumber!,
                         _selectionDetails!.selectedText!,
                       );
+
+                      // Show a Snackbar to confirm highlighting
                       ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Text highlighted!")));
                       _selectionDetails = null;
@@ -496,8 +610,13 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   IconButton(
                     icon: Icon(Icons.note_add),
                     onPressed: () {
-                      _addNoteDialog(_pdfViewerController.pageNumber!,
-                          _selectionDetails!.selectedText!);
+                      print("[Note Specifications] Adding Note for Text: ${_selectionDetails!.selectedText}");
+
+                      // Open the note dialog for adding a note
+                      _addNoteDialog(
+                        _pdfViewerController.pageNumber!,
+                        _selectionDetails!.selectedText!,
+                      );
                     },
                   ),
                 ],
@@ -507,6 +626,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       ),
     ]);
   }
+
+
 
   void _showHighlights() async {
     final selectedPage = await Navigator.push(
@@ -589,7 +710,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     _showToolbar = false;
     _showScrollHead = true;
     super.initState();
-    _initializeDb();
+    initializeDb();
     if (widget.urlToPdf.isEmpty) {
       setState(() {
         isLoading = false; // Set loading to false to show the image
@@ -768,7 +889,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               setState(() {
                 _showScrollHead = false;
                 _showToolbar = true;
-                _ensureHistoryEntry();
+                ensureHistoryEntry();
               });
             },
           ),
@@ -889,6 +1010,5 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       ),
     );
   }
-
 
 }

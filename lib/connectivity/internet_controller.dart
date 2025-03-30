@@ -27,14 +27,14 @@ class InternetController extends GetxController {
       Get.rawSnackbar(
         titleText: Container(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(Get.context!).size.height * 0.9,
+            maxHeight: MediaQuery.of(Get.context!).size.height *0.05,
           ),
           width: double.infinity,
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "No internet Connection",
+                "No internet Connection ",
                 style: TextStyle(fontSize: 25, color: Colors.white),
               ),
             ],

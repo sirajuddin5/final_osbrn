@@ -348,6 +348,7 @@ import 'package:flutter/material.dart';
 import '../networking/fetch_response.dart';
 import '../networking/publication_model.dart';
 import '../publication_screen.dart';
+import '../widgets/all_books.dart';
 import '../widgets/custom_drawer.dart';
 
 class HomePage extends StatefulWidget {
@@ -361,12 +362,19 @@ class HomePage extends StatefulWidget {
 class _HomePgeState extends State<HomePage> {
   late Future<List<Publication>>? futurePublications;
 
+  // Method to reload publications
+  Future<void> _reloadPublications() async {
+    setState(() {
+      futurePublications = fetchPublications(widget.deviceToken, context);
+    });
+  }
+
 
   @override
   void initState() {
     super.initState();
     print(widget.deviceToken);
-    futurePublications = fetchPublications(widget.deviceToken);
+    futurePublications = fetchPublications(widget.deviceToken,context);
     // print(futurePublications);
   }
 
@@ -396,7 +404,7 @@ class _HomePgeState extends State<HomePage> {
         ),
         drawer: CustomDrawer(),
 
-        body:AllBooksWidget(futurePublications:  fetchPublications(widget.deviceToken),),
+        body:AllBooksWidget(futurePublications:  fetchPublications(widget.deviceToken,context), onReload:_reloadPublications,),
       ),
     );
   }
