@@ -25,7 +25,6 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
   final PdfViewerController _pdfViewerController = PdfViewerController();
@@ -52,8 +51,6 @@ class _MainPageState extends State<MainPage> {
       path,
       version: 1,
       onCreate: (Database db, int version) async {
-
-
         await db.execute(
             "CREATE TABLE Highlights (id INTEGER PRIMARY KEY, pageNumber INTEGER, text TEXT, x REAL, y REAL, width REAL, height REAL, color INTEGER)");
         await db.execute(
@@ -457,7 +454,6 @@ class _MainPageState extends State<MainPage> {
                 controller: _pdfViewerController,
                 key: _pdfViewerKey,
                 pageLayoutMode: PdfPageLayoutMode.single,
-
                 onPageChanged: (PdfPageChangedDetails details) {
                   print("[PDF] Page changed to: ${details.newPageNumber}");
 
@@ -465,7 +461,6 @@ class _MainPageState extends State<MainPage> {
                   _clearHighlightOverlays();
                   _loadPageHighlights(details.newPageNumber);
                 },
-
                 onZoomLevelChanged: (PdfZoomDetails details) {
                   print("[PDF] Zoom changed to: ${details.newZoomLevel}");
 
@@ -474,14 +469,14 @@ class _MainPageState extends State<MainPage> {
                   _clearHighlightOverlays();
                   _loadPageHighlights(currentPage);
                 },
-
                 onAnnotationAdded: (Annotation annotation) {
                   print("Annotation added: $annotation");
 
                   // If available, get the annotation details from _selectionDetails
                   if (_selectionDetails != null) {
-                    final Rect? region = _selectionDetails!.globalSelectedRegion;
-                   // final Rect region = details.bounds!.first;
+                    final Rect? region =
+                        _selectionDetails!.globalSelectedRegion;
+                    // final Rect region = details.bounds!.first;
 
                     if (region != null) {
                       final double x = region.left;
@@ -490,16 +485,20 @@ class _MainPageState extends State<MainPage> {
                       final double height = region.height;
                       final int color = annotation.color.value;
 
-                      Provider.of<AppState>(context, listen: false).addHighlight(
-                        _pdfViewerController.pageNumber ?? 1, // Ensure non-null page number
+                      Provider.of<AppState>(context, listen: false)
+                          .addHighlight(
+                        _pdfViewerController.pageNumber ??
+                            1, // Ensure non-null page number
                         Provider.of<AppState>(context, listen: false).raam,
                         x, y, width, height, color,
                       );
                     }
                   }
                 },
-                onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
-                  if (details.selectedText != null && details.selectedText!.isNotEmpty) {
+                onTextSelectionChanged:
+                    (PdfTextSelectionChangedDetails details) {
+                  if (details.selectedText != null &&
+                      details.selectedText!.isNotEmpty) {
                     print("Selected text: ${details.selectedText}");
                     print("Selected region: ${details.globalSelectedRegion}");
 
@@ -523,7 +522,8 @@ class _MainPageState extends State<MainPage> {
               child: Align(
                 alignment: Alignment.center,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
                   decoration: BoxDecoration(
                     color: Colors.grey[600],
                     borderRadius: BorderRadius.circular(16.0),
@@ -531,14 +531,18 @@ class _MainPageState extends State<MainPage> {
                   child: const Text(
                     'No result',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: 'Roboto', fontSize: 16, color: Colors.white),
+                    style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 16,
+                        color: Colors.white),
                   ),
                 ),
               ),
             ),
 
             // Highlight and Note buttons
-            if (_selectionDetails != null && _selectionDetails!.selectedText != null)
+            if (_selectionDetails != null &&
+                _selectionDetails!.selectedText != null)
               Container(
                 color: Colors.grey[200],
                 padding: EdgeInsets.symmetric(vertical: 5),
@@ -548,7 +552,8 @@ class _MainPageState extends State<MainPage> {
                     IconButton(
                       icon: const Icon(Icons.highlight, color: Colors.amber),
                       onPressed: () {
-                        final Rect? region = _selectionDetails!.globalSelectedRegion;
+                        final Rect? region =
+                            _selectionDetails!.globalSelectedRegion;
                         if (region != null) {
                           final double x = region.left;
                           final double y = region.top;
@@ -556,8 +561,10 @@ class _MainPageState extends State<MainPage> {
                           final double height = region.height;
                           final int color = Colors.yellow.value;
 
-                          Provider.of<AppState>(context, listen: false).addHighlight(
-                            _pdfViewerController.pageNumber ?? 1, // Ensure non-null page number
+                          Provider.of<AppState>(context, listen: false)
+                              .addHighlight(
+                            _pdfViewerController.pageNumber ??
+                                1, // Ensure non-null page number
                             _selectionDetails!.selectedText!,
                             x, y, width, height, color,
                           );
@@ -572,7 +579,8 @@ class _MainPageState extends State<MainPage> {
                     IconButton(
                       icon: const Icon(Icons.note_add, color: Colors.blue),
                       onPressed: () {
-                        if (_selectionDetails != null && _selectionDetails!.selectedText != null) {
+                        if (_selectionDetails != null &&
+                            _selectionDetails!.selectedText != null) {
                           _addNoteDialog(
                             _pdfViewerController.pageNumber ?? 1,
                             _selectionDetails!.selectedText!,
@@ -594,16 +602,8 @@ class _MainPageState extends State<MainPage> {
       context,
       MaterialPageRoute(
         builder: (context) => HighlightsPage(
-          onViewHighlight: (pageNumber, text, x, y, width, height, color) async {
-            // Jump to the specific page
-            _pdfViewerController.jumpToPage(pageNumber);
-
-            // Allow time for the page to load
-            await Future.delayed(const Duration(milliseconds: 300));
-
-            // Show the highlight on the page
-            _showHighlightOnPage(pageNumber, text, x, y, width, height, color);
-          },
+          urlId: "",
+          pdfViewerController: _pdfViewerController,
         ),
       ),
     );
@@ -616,29 +616,23 @@ class _MainPageState extends State<MainPage> {
 
 // Method to display highlights for the current page
   void _loadPageHighlights(int pageNumber) async {
-
     print("inside loading highlights after page change ");
     // Clear any existing highlight overlays
     _clearHighlightOverlays();
 
     // Get highlights for this page from the database
-    final List<Highlight> pageHighlights = await _getHighlightsForPage(pageNumber);
+    final List<Highlight> pageHighlights =
+        await _getHighlightsForPage(pageNumber);
 
     // If there are highlights, display them
     if (pageHighlights.isNotEmpty) {
       for (var highlight in pageHighlights) {
-        _showHighlightOnPage(
-            highlight.pageNumber,
-            highlight.text,
-            highlight.x,
-            highlight.y,
-            highlight.width,
-            highlight.height,
-            highlight.color
-        );
+        _showHighlightOnPage(highlight.pageNumber, highlight.text, highlight.x,
+            highlight.y, highlight.width, highlight.height, highlight.color);
       }
 
-      print("[Highlights] Loaded ${pageHighlights.length} highlights for page $pageNumber");
+      print(
+          "[Highlights] Loaded ${pageHighlights.length} highlights for page $pageNumber");
     } else {
       print("[Highlights] No highlights found for page $pageNumber");
     }
@@ -646,7 +640,6 @@ class _MainPageState extends State<MainPage> {
 
 // Helper method to fetch highlights for a specific page from the database
   Future<List<Highlight>> _getHighlightsForPage(int pageNumber) async {
-
     final appState = Provider.of<AppState>(context, listen: false);
     return await appState.getHighlightsForPage(pageNumber);
   }
@@ -663,15 +656,14 @@ class _MainPageState extends State<MainPage> {
   }
 
   void _showHighlightOnPage(
-      int pageNumber,
-      String text,
-      double x,
-      double y,
-      double width,
-      double height,
-      int color,
-      )
-  {
+    int pageNumber,
+    String text,
+    double x,
+    double y,
+    double width,
+    double height,
+    int color,
+  ) {
     final double scaleFactor = _pdfViewerController.zoomLevel;
     final double horizontalOffset = _pdfViewerController.scrollOffset.dx;
 
@@ -684,7 +676,8 @@ class _MainPageState extends State<MainPage> {
     // Only scroll horizontally to make highlight visible
     _pdfViewerController.jumpTo(
       xOffset: max(0, scaledX - 50),
-      yOffset: _pdfViewerController.scrollOffset.dy, // Keep vertical position unchanged
+      yOffset: _pdfViewerController
+          .scrollOffset.dy, // Keep vertical position unchanged
     );
 
     // Add overlay
@@ -795,62 +788,62 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
         appBar: _showToolbar
             ? AppBar(
-          flexibleSpace: SafeArea(
-            child: SearchToolbar(
-              key: _textSearchKey,
-              showTooltip: true,
-              controller: _pdfViewerController,
-              onTap: (Object toolbarItem) async {
-                if (toolbarItem.toString() == 'Cancel Search') {
-                  setState(() {
-                    _showToolbar = false;
-                    _showScrollHead = true;
-                    if (Navigator.canPop(context)) {
-                      Navigator.maybePop(context);
-                    }
-                  });
-                }
-                if (toolbarItem.toString() == 'noResultFound') {
-                  setState(() {
-                    _textSearchKey.currentState?.showToast = true;
-                  });
-                  await Future.delayed(Duration(seconds: 1));
-                  setState(() {
-                    _textSearchKey.currentState?.showToast = false;
-                  });
-                }
-              },
-            ),
-          ),
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.deepPurple,
-        )
+                flexibleSpace: SafeArea(
+                  child: SearchToolbar(
+                    key: _textSearchKey,
+                    showTooltip: true,
+                    controller: _pdfViewerController,
+                    onTap: (Object toolbarItem) async {
+                      if (toolbarItem.toString() == 'Cancel Search') {
+                        setState(() {
+                          _showToolbar = false;
+                          _showScrollHead = true;
+                          if (Navigator.canPop(context)) {
+                            Navigator.maybePop(context);
+                          }
+                        });
+                      }
+                      if (toolbarItem.toString() == 'noResultFound') {
+                        setState(() {
+                          _textSearchKey.currentState?.showToast = true;
+                        });
+                        await Future.delayed(Duration(seconds: 1));
+                        setState(() {
+                          _textSearchKey.currentState?.showToast = false;
+                        });
+                      }
+                    },
+                  ),
+                ),
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.deepPurple,
+              )
             : AppBar(
-          title: Text(
-            widget.title.toString(),
-            style: TextStyle(color: Colors.white),
-          ),
-          actions: [
-            IconButton(
-              icon: Icon(
-                Icons.search,
-                color: Colors.white,
+                title: Text(
+                  widget.title.toString(),
+                  style: TextStyle(color: Colors.white),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.search,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _showScrollHead = false;
+                        _showToolbar = true;
+                        _ensureHistoryEntry();
+                      });
+                    },
+                  ),
+                  IconButton(
+                      onPressed: _showBookmarks,
+                      icon: Icon(Icons.bookmark, color: Colors.white)),
+                ],
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.deepPurple,
               ),
-              onPressed: () {
-                setState(() {
-                  _showScrollHead = false;
-                  _showToolbar = true;
-                  _ensureHistoryEntry();
-                });
-              },
-            ),
-            IconButton(
-                onPressed: _showBookmarks,
-                icon: Icon(Icons.bookmark, color: Colors.white)),
-          ],
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.deepPurple,
-        ),
         body: Column(
           children: [
             Expanded(child: _buildPdfViewer()),
@@ -887,21 +880,21 @@ class _MainPageState extends State<MainPage> {
                     },
                   ),
                   IconButton(
-                    icon:const Icon(
+                    icon: const Icon(
                       Icons.highlight_rounded,
                       color: Colors.white,
                     ),
                     onPressed: _showHighlights,
                   ),
                   IconButton(
-                    icon:const Icon(
+                    icon: const Icon(
                       Icons.note,
                       color: Colors.white,
                     ),
                     onPressed: _showNotes,
                   ),
                   IconButton(
-                    icon:const Icon(
+                    icon: const Icon(
                       Icons.bookmark_add,
                       color: Colors.white,
                       size: 28,
@@ -928,6 +921,6 @@ class _MainPageState extends State<MainPage> {
             )
           ],
         ) //_buildPdfViewer(),
-    );
+        );
   }
 }

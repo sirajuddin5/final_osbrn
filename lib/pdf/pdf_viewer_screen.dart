@@ -126,7 +126,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 try {
                   final res = await highlightService
                       .getHighlights(widget.publicationId);
-                  log("log message "+ res.toString());
+                  log("log message " + res.toString());
 
                   if (res.status ?? false) {
                     if (res.data == null) {
@@ -229,7 +229,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               // When text selection is changed
               onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
                 print(
-                    "[Text Selection Specifications] Text Selection Changed!" + widget.publicationId);
+                    "[Text Selection Specifications] Text Selection Changed!" +
+                        widget.publicationId);
                 print(
                     "[Text Selection Specifications] Selected Text: ${details.selectedText}");
                 print(
@@ -239,7 +240,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
                 if (details.selectedText != null &&
                     details.selectedText!.isNotEmpty) {
-                  setState(()  {
+                  setState(() {
                     _selectionDetails = details;
                     print(
                         "[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
@@ -398,20 +399,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       MaterialPageRoute(
         builder: (context) => HighlightsPage(
           // Pass the highlights data to HighlightsPage
-          onViewHighlight: (pageNumber, text, x, y, width, height, color) {
-            // Jump to the specific page
-            _pdfViewerController.jumpToPage(pageNumber);
-
-            // Optional: Scroll to the highlight position
-            // You may need to convert the coordinates to the current view
-
-            // Show a temporary indicator of where the highlight is
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('Viewing highlight: "$text"'),
-              backgroundColor: Color(color),
-              duration: Duration(seconds: 2),
-            ));
-          },
+          pdfViewerController: _pdfViewerController,
+          urlId: widget.publicationId,
         ),
       ),
     );
