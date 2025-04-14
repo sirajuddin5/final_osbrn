@@ -1,7 +1,7 @@
-
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:osborn_book/pdf/search_toolbar.dart';
 import 'package:osborn_book/pdf/service/highlight_service.dart';
 import 'package:path_provider/path_provider.dart';
@@ -121,16 +121,59 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         children: [
           Expanded(
             child: SfPdfViewer.file(
+              onDocumentLoaded: (details) async {
+                try {
+                  final res = await highlightService
+                      .getHighlights(widget.publicationId);
+
+                  if (res.status ?? false) {
+                    if (res.data == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('No highlights found'),
+                      ));
+                    }
+                    for (var d in res.data!) {
+                      List<PdfTextLine> list = [];
+
+                      for (var t in d.pdfTextLines) {
+                        list.add(PdfTextLine(
+                            Rect.fromLTWH(
+                                t["x"], t["y"], t["width"], t["height"]),
+                            t["text"],
+                            t["pageNumber"]));
+                      }
+
+                      final high =
+                          HighlightAnnotation(textBoundsCollection: list);
+                      _pdfViewerController.addAnnotation(high);
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(res.message ?? "Something went wrong"),
+                    ));
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
               File(pdfPath),
               controller: _pdfViewerController,
               key: _pdfViewerKey,
               pageLayoutMode: PdfPageLayoutMode.single,
 
               // When annotation is added (e.g., highlight)
-              onAnnotationAdded: (Annotation annotation) {
-                print("[Highlight Specifications] Annotation Added: $annotation");
-                print("[Highlight Specifications] Current Page Number: ${_pdfViewerController.pageNumber}");
-                print("[Highlight Specifications] Raam Value: ${Provider.of<AppState>(context, listen: false).raam}");
+              onAnnotationAdded: (Annotation annotation) async {
+                print(
+                    "[Highlight Specifications] Annotation Added: $annotation");
+                print(
+                    "[Highlight Specifications] Current Page Number: ${_pdfViewerController.pageNumber}");
+                print(
+                    "[Highlight Specifications] Raam Value: ${Provider.of<AppState>(context, listen: false).raam}");
 
                 // Update the state with the new highlight
                 if (_selectionDetails != null) {
@@ -143,10 +186,35 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                     final double height = region.height;
                     final int color = annotation.color.value;
 
+                    try {
+                      if (_highlight != null) {
+                        final res =
+                            await highlightService.createHighlight(_highlight!);
 
+                        if (res.status ?? false) {
+                          _highlight = null;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text("Highlight Created Successfully")),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(res.message ??
+                                    "Failed to create highlight")),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Error: $e")),
+                      );
+                    }
 
                     Provider.of<AppState>(context, listen: false).addHighlight(
-                      _pdfViewerController.pageNumber ?? 1, // Ensure non-null page number
+                      _pdfViewerController.pageNumber ??
+                          1, // Ensure non-null page number
                       Provider.of<AppState>(context, listen: false).raam,
                       x, y, width, height, color,
                     );
@@ -156,23 +224,28 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
               // When text selection is changed
               onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
-                print("[Text Selection Specifications] Text Selection Changed!");
-                print("[Text Selection Specifications] Selected Text: ${details.selectedText}");
-                print("[Text Selection Specifications] Global Selected Region: ${details.globalSelectedRegion}");
-                print("[Text Selection Specifications] Text Selection Details: ${details.toString()}");
+                print(
+                    "[Text Selection Specifications] Text Selection Changed!");
+                print(
+                    "[Text Selection Specifications] Selected Text: ${details.selectedText}");
+                print(
+                    "[Text Selection Specifications] Global Selected Region: ${details.globalSelectedRegion}");
+                print(
+                    "[Text Selection Specifications] Text Selection Details: ${details.toString()}");
 
-                if (details.selectedText != null && details.selectedText!.isNotEmpty) {
+                if (details.selectedText != null &&
+                    details.selectedText!.isNotEmpty) {
                   setState(() async {
                     _selectionDetails = details;
-                    print("[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
+                    print(
+                        "[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
 
                     // Update the state with the selected text
                     Provider.of<AppState>(context, listen: false)
                         .updateData(_selectionDetails!.selectedText as String);
 
-
                     List<PdfTextLine>? pdfTextLines =
-                    _pdfViewerKey.currentState?.getSelectedTextLines();
+                        _pdfViewerKey.currentState?.getSelectedTextLines();
 
                     List<Map<String, dynamic>> list = [];
 
@@ -187,8 +260,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                       list.add(map);
                     }
 
-                    _highlight = Highlight(id: '', publicationId: widget.publicationId,  pdfTextLines: list);
-
+                    _highlight = Highlight(
+                        id: '',
+                        publicationReaderId: widget.publicationId,
+                        pdfTextLines: list);
                   });
                 }
               },
@@ -205,10 +280,12 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Container(
-                    padding: const EdgeInsets.only(left: 15, top: 7, right: 15, bottom: 7),
+                    padding: const EdgeInsets.only(
+                        left: 15, top: 7, right: 15, bottom: 7),
                     decoration: BoxDecoration(
                       color: Colors.grey[600],
-                      borderRadius: const BorderRadius.all(Radius.circular(16.0)),
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(16.0)),
                     ),
                     child: const Text(
                       'No result',
@@ -226,7 +303,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
           ),
 
           // Display the row of icons (highlight and add note)
-          if (_selectionDetails != null && _selectionDetails!.selectedText != null)
+          if (_selectionDetails != null &&
+              _selectionDetails!.selectedText != null)
             Container(
               color: Colors.grey[200],
               child: Row(
@@ -234,10 +312,12 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   IconButton(
                     icon: Icon(Icons.highlight),
                     onPressed: () {
-                      print("[Highlight Specifications] Highlighting Text: ${_selectionDetails!.selectedText}");
+                      print(
+                          "[Highlight Specifications] Highlighting Text: ${_selectionDetails!.selectedText}");
 
                       // Add the highlight to the app state
-                      final Rect? region = _selectionDetails!.globalSelectedRegion;
+                      final Rect? region =
+                          _selectionDetails!.globalSelectedRegion;
                       if (region != null) {
                         final double x = region.left;
                         final double y = region.top;
@@ -245,8 +325,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                         final double height = region.height;
                         final int color = Colors.yellow.value;
 
-                        Provider.of<AppState>(context, listen: false).addHighlight(
-                          _pdfViewerController.pageNumber ?? 1, // Ensure non-null page number
+                        Provider.of<AppState>(context, listen: false)
+                            .addHighlight(
+                          _pdfViewerController.pageNumber ??
+                              1, // Ensure non-null page number
                           _selectionDetails!.selectedText!,
                           x, y, width, height, color,
                         );
@@ -260,18 +342,18 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
                       //final Rect? region = _selectionDetails!.globalSelectedRegion;
 
-
                       try {
                         // Calling the createHighlight service method
                         print("==============================================");
                         print("inside try for highlight saving");
-                        if(_highlight!=null){
-                          final createdHighlight =  highlightService.createHighlight(_highlight!);
+                        if (_highlight != null) {
+                          final createdHighlight =
+                              highlightService.createHighlight(_highlight!);
                           print("outside try for highlight saving");
                           print(createdHighlight);
-                          print("==============================================");
+                          print(
+                              "==============================================");
                         }
-
 
                         // Show success message with the created highlight's details
                         // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -283,13 +365,13 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                           content: Text('Failed to create highlight: $e'),
                         ));
                       }
-
                     },
                   ),
                   IconButton(
                     icon: Icon(Icons.note_add),
                     onPressed: () {
-                      print("[Note Specifications] Adding Note for Text: ${_selectionDetails!.selectedText}");
+                      print(
+                          "[Note Specifications] Adding Note for Text: ${_selectionDetails!.selectedText}");
 
                       // Open the note dialog for adding a note
                       _addNoteDialog(
@@ -306,7 +388,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     ]);
   }
 
-
   void _showHighlights() async {
     final result = await Navigator.push(
       context,
@@ -321,13 +402,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
             // You may need to convert the coordinates to the current view
 
             // Show a temporary indicator of where the highlight is
-            ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Viewing highlight: "$text"'),
-                  backgroundColor: Color(color),
-                  duration: Duration(seconds: 2),
-                )
-            );
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Viewing highlight: "$text"'),
+              backgroundColor: Color(color),
+              duration: Duration(seconds: 2),
+            ));
           },
         ),
       ),
@@ -444,7 +523,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title:const Text('No PDF Available'),
+          title: const Text('No PDF Available'),
           content: const Text('Currently, no PDF is available.'),
           actions: [
             TextButton(
@@ -503,24 +582,24 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _showToolbar ?
-          AppBar(
-            flexibleSpace: SafeArea(
+      appBar: _showToolbar
+          ? AppBar(
+              flexibleSpace: SafeArea(
                 child: SearchToolbar(
                   key: _textSearchKey,
                   showTooltip: true,
                   controller: _pdfViewerController,
                   onTap: (Object toolbarItem) async {
-                    if(toolbarItem.toString() == 'Cancel Search'){
+                    if (toolbarItem.toString() == 'Cancel Search') {
                       setState(() {
                         _showToolbar = false;
                         _showScrollHead = true;
-                        if(Navigator.canPop(context)){
+                        if (Navigator.canPop(context)) {
                           Navigator.maybePop(context);
                         }
                       });
                     }
-                    if(toolbarItem.toString() =='noResultFound'){
+                    if (toolbarItem.toString() == 'noResultFound') {
                       setState(() {
                         _textSearchKey.currentState?.showToast = true;
                       });
@@ -531,142 +610,146 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                     }
                   },
                 ),
-            ),
-            automaticallyImplyLeading: false,
-            backgroundColor: Colors.deepPurple,
-          )
-      : AppBar(
-        title:const Text(
-          "Osborne",
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.search,
-              color: Colors.white,
-            ),
-            onPressed: () {
-              setState(() {
-                _showScrollHead = false;
-                _showToolbar = true;
-                ensureHistoryEntry();
-              });
-            },
-          ),
-          IconButton(
-              onPressed: _showBookmarks,
-              icon: const Icon(Icons.bookmark, color: Colors.white),),
-        ],
-        automaticallyImplyLeading: false,
-        backgroundColor: Colors.deepPurple,
-      ),
-
-      body: isLoading
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Loading: ${downloadProgress.toStringAsFixed(0)}%',
-              style: TextStyle(fontSize: 18),
-            ),
-           const SizedBox(height: 20),
-            CircularProgressIndicator(value: downloadProgress / 100),
-          ],
-        ),
-      )
-          : widget.urlToPdf.isEmpty
-          ? Center(child: Image.network(widget.imagePath)) // Display the image if no PDF
-          : Column(
-        children: [
-          Expanded(child: _buildPdfViewer()),
-          Container(
-            color: Colors.deepPurple,
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-            height: 60,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+              ),
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.deepPurple,
+            )
+          : AppBar(
+              title: const Text(
+                "Osborne",
+                style: TextStyle(color: Colors.white),
+              ),
+              actions: [
                 IconButton(
-                  icon:const Icon(
-                    Icons.list,
+                  icon: const Icon(
+                    Icons.search,
                     color: Colors.white,
-                    size: 28,
                   ),
                   onPressed: () {
-                    _pdfViewerKey.currentState?.openBookmarkView();
-                  },
-                ),
-                IconButton(
-                  // Add this new IconButton for the grid view
-                  icon: Icon(Icons.grid_view,
-                      color: Colors.white, size: 28),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PdfGridView(
-                          pdfViewerController: _pdfViewerController,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.highlight_rounded,
-                    color: Colors.white,
-                  ),
-                  onPressed: _showHighlights,
-                ),
-                IconButton(
-                  icon:const Icon(
-                    Icons.note,
-                    color: Colors.white,
-                  ),
-                  onPressed: _showNotes,
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.bookmark_add,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  onPressed: () {
-                    final currentPage = _pdfViewerController.pageNumber;
-                    final bookmark = Bookmark(
-                      id: 'page_$currentPage',
-                      pageNumber: currentPage,
-                    );
-
-                    Provider.of<AppState>(context, listen: false)
-                        .addBookmark(bookmark)
-                        .then((_) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Page $currentPage bookmarked')),
-                      );
+                    setState(() {
+                      _showScrollHead = false;
+                      _showToolbar = true;
+                      ensureHistoryEntry();
                     });
                   },
                 ),
                 IconButton(
-                  icon:const Icon(
-                    Icons.download,
-                    color: Colors.white,
-                  ),
-                  onPressed: () async {
-                    if (pdfPath.isNotEmpty) {
-                       await savePdfToDocuments();
-                        }
-                    },
+                  onPressed: _showBookmarks,
+                  icon: const Icon(Icons.bookmark, color: Colors.white),
                 ),
               ],
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.deepPurple,
             ),
-          )
-        ],
-      ),
+      body: isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Loading: ${downloadProgress.toStringAsFixed(0)}%',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const SizedBox(height: 20),
+                  CircularProgressIndicator(value: downloadProgress / 100),
+                ],
+              ),
+            )
+          : widget.urlToPdf.isEmpty
+              ? Center(
+                  child: Image.network(
+                      widget.imagePath)) // Display the image if no PDF
+              : Column(
+                  children: [
+                    Expanded(child: _buildPdfViewer()),
+                    Container(
+                      color: Colors.deepPurple,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 5, horizontal: 20),
+                      height: 60,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.list,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              _pdfViewerKey.currentState?.openBookmarkView();
+                            },
+                          ),
+                          IconButton(
+                            // Add this new IconButton for the grid view
+                            icon: Icon(Icons.grid_view,
+                                color: Colors.white, size: 28),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PdfGridView(
+                                    pdfViewerController: _pdfViewerController,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.highlight_rounded,
+                              color: Colors.white,
+                            ),
+                            onPressed: _showHighlights,
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.note,
+                              color: Colors.white,
+                            ),
+                            onPressed: _showNotes,
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              Icons.bookmark_add,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              final currentPage =
+                                  _pdfViewerController.pageNumber;
+                              final bookmark = Bookmark(
+                                id: 'page_$currentPage',
+                                pageNumber: currentPage,
+                              );
+
+                              Provider.of<AppState>(context, listen: false)
+                                  .addBookmark(bookmark)
+                                  .then((_) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content:
+                                          Text('Page $currentPage bookmarked')),
+                                );
+                              });
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.download,
+                              color: Colors.white,
+                            ),
+                            onPressed: () async {
+                              if (pdfPath.isNotEmpty) {
+                                await savePdfToDocuments();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                ),
     );
   }
-
 }
