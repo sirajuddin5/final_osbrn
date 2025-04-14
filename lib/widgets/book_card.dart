@@ -65,8 +65,9 @@ class BookCard extends StatelessWidget {
   final String imagePath;
   final String url;
   final String urlToPdf;
+  final String publicationId;
 
-  BookCard({required this.title, required this.imagePath, required this.url,required this.urlToPdf});
+  BookCard({required this.title, required this.imagePath, required this.url,required this.urlToPdf,required this.publicationId});
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +77,7 @@ class BookCard extends StatelessWidget {
         Navigator.push(
           context,
           // MaterialPageRoute(builder: (context) =>  WebViewScreen(url: url,urlToPdf: urlToPdf,)),
-          MaterialPageRoute(builder: (context) =>  PdfViewerPage(title: title, imagePath: imagePath, url: url, urlToPdf: urlToPdf,)),
+          MaterialPageRoute(builder: (context) =>  PdfViewerPage(title: title, imagePath: imagePath, url: url, urlToPdf: urlToPdf, publicationId: publicationId,)),
         );
       },
       child: Card(

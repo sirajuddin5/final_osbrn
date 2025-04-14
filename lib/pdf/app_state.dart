@@ -5,9 +5,13 @@ import 'bookmark.dart';
 
 
 class AppState extends ChangeNotifier {
-  List<Highlight> highlights = [];
+  List<Highlight> _highlights = [];
   List<Bookmark> bookmarks = [];
   Database? database;
+
+  List<Highlight> get highlights => _highlights;
+
+  final DatabaseHelper _databaseHelper = DatabaseHelper();
 
   String raam = '';
 
@@ -16,6 +20,10 @@ class AppState extends ChangeNotifier {
     notifyListeners(); // Notify listeners to update the UI
   }
 
+  void updateRegion(String newData) {
+    raam = newData;
+    notifyListeners(); // Notify listeners to update the UI
+  }
   void setDatabase(Database db) {
     database = db;
     loadSavedData();
@@ -26,13 +34,18 @@ class AppState extends ChangeNotifier {
 
     final List<Map<String, dynamic>> highlightsResult =
     await database!.query('Highlights');
-    highlights = highlightsResult
+    _highlights = highlightsResult
         .map((e) => Highlight(
       id: e['id'],
       pageNumber: e['pageNumber'],
       text: e['text'],
-    ))
-        .toList();
+      x: e['x'],
+      y: e['y'],
+      width: e['width'],
+      height: e['height'],
+      color: e['color'],
+
+    )).toList();
 
     final List<Map<String, dynamic>> bookmarksResult =
     await database!.query('BookMarks');
@@ -44,18 +57,118 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addHighlight(int pageNumber, String text) async {
-    if (database == null) return;
 
-    final id = await database!.insert('Highlights', {
-      'pageNumber': pageNumber,
-      'text': text,
-    });
-    highlights.add(Highlight(id: id, pageNumber: pageNumber, text: text));
+
+  // Future<void> addHighlight(int pageNumber, String text, double x, double y, double width, double height, int color) async {
+  //   if (database == null) return;
+  //
+  //   final id = await database!.insert('Highlights', {
+  //     'pageNumber': pageNumber,
+  //     'text': text,
+  //     'x': x,
+  //     'y': y,
+  //     'width': width,
+  //     'height': height,
+  //     'color': color,
+  //   });
+  //   highlights.add(Highlight(
+  //     id: id,
+  //     pageNumber: pageNumber,
+  //     text: text,
+  //     x: x,
+  //     y: y,
+  //     width: width,
+  //     height: height,
+  //     color: color,
+  //   ));
+
+  //new onne
+
+  Future<void> addHighlight(
+      int pageNumber,
+      String text,
+      double x,
+      double y,
+      double width,
+      double height,
+      int color,
+      ) async {
+    // Create highlight data object
+    final highlight = Highlight(
+      pageNumber: pageNumber,
+      text: text,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+      color: color,
+    );
+
+    // Add to database
+    final id = await _databaseHelper.addHighlight(highlight);
+
+    // Create a copy with the assigned ID
+    final savedHighlight = Highlight(
+      id: id,
+      pageNumber: pageNumber,
+      text: text,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+      color: color,
+    );
+
+    // Add to in-memory list
+    _highlights.add(savedHighlight);
 
     //_pdfViewerController.addAnnotation(highlightAnnotation);
 
     notifyListeners();
+
+    print("[AppState] Highlight saved: Page $pageNumber, Text: $text");
+  }
+
+  //TODO get highlights
+
+  // List of highlights in memory
+
+
+  // Method to fetch all highlights from database original one
+  // Future<void> loadAllHighlights() async {
+  //   _highlights = await _databaseHelper.getHighlights();
+  //   notifyListeners();
+  // }
+
+  // Method to get highlights for a specific page original one
+  // Future<List<Highlight>> getHighlightsForPage(int pageNumber) async {
+  //   final List<Highlight> pageHighlights = await _databaseHelper.getHighlightsByPage(pageNumber);
+  //   return pageHighlights;
+  // }
+
+  // Initialize the state (call this during app startup)
+  Future<void> initialize() async {
+    await loadAllHighlights();
+  }
+
+  // Load all highlights from database
+  Future<void> loadAllHighlights() async {
+    _highlights = await _databaseHelper.getHighlights();
+    print("[AppState] Loaded ${_highlights.length} highlights from database");
+    notifyListeners();
+  }
+
+  // Get highlights for a specific page
+  Future<List<Highlight>> getHighlightsForPage(int pageNumber) async {
+    return await _databaseHelper.getHighlightsByPage(pageNumber);
+  }
+
+  // Delete a highlight
+  Future<void> deleteHighlight(int highlightId) async {
+    await _databaseHelper.deleteHighlight(highlightId);
+    _highlights.removeWhere((highlight) => highlight.id == highlightId);
+    notifyListeners();
+    print("[AppState] Highlight deleted: ID $highlightId");
   }
 
   Future<void> removeHighlight(int id) async {

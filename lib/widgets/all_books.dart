@@ -74,12 +74,16 @@ class _AllBooksWidgetState extends State<AllBooksWidget> {
               itemCount: snapshot.data?.length ?? 0,
               itemBuilder: (context, index) {
                 final publication = snapshot.data![index];
+                print("------------------------------");
+                print(publication.title);
                 // Use BookCard instead of ListTile
                 return BookCard(
                   title: publication.title,
                   imagePath: publication.coverUrl,
                   url: publication.pathUrl,
-                  urlToPdf: publication.urlToPdf, // Changed to use coverUrl for imagePath
+                  urlToPdf: publication.urlToPdf,
+                  publicationId: publication.publicationId,
+                  // Changed to use coverUrl for imagePath
                 );
               },
             );

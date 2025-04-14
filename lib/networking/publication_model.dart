@@ -92,6 +92,7 @@ class Publication {
   final String updatedAt;
   final String urlToPdf;
   final String flippingBookEmbedCode;
+  final String publicationId;
 
   Publication({
     required this.urlId,
@@ -103,6 +104,7 @@ class Publication {
     required this.updatedAt,
     required this.urlToPdf,
     required this.flippingBookEmbedCode,
+    required this.publicationId,
   });
 
   factory Publication.fromJson(Map<String, dynamic> json) {
@@ -116,6 +118,7 @@ class Publication {
       updatedAt: json['updated_at']?.toString() ?? "",
       urlToPdf: json['url_to_pdf'] ?? "",
       flippingBookEmbedCode: json['flipping_book_embed_code'] ?? "", // added new field
+      publicationId: json['id'] ?? "",
     );
   }
 }

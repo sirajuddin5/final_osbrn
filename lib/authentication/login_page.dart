@@ -284,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
                             print("deviceId calculation");
                             // TODO
                             response = await authenticateUser(
-                                email, password, "deviceId");
+                                email, password, deviceId);
                             print("response calculation");
                             print("responsse : $response");
                             print(
