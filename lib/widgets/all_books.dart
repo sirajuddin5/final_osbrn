@@ -82,7 +82,7 @@ class _AllBooksWidgetState extends State<AllBooksWidget> {
                   imagePath: publication.coverUrl,
                   url: publication.pathUrl,
                   urlToPdf: publication.urlToPdf,
-                  publicationId: publication.publicationId,
+                  publicationId: publication.urlId,
                   // Changed to use coverUrl for imagePath
                 );
               },

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -125,6 +126,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 try {
                   final res = await highlightService
                       .getHighlights(widget.publicationId);
+                  log("log message "+ res.toString());
 
                   if (res.status ?? false) {
                     if (res.data == null) {
@@ -188,6 +190,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
                     try {
                       if (_highlight != null) {
+                        log("==============================================");
+                        log(_highlight!.publicationReaderId.toString());
                         final res =
                             await highlightService.createHighlight(_highlight!);
 
@@ -225,7 +229,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               // When text selection is changed
               onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
                 print(
-                    "[Text Selection Specifications] Text Selection Changed!");
+                    "[Text Selection Specifications] Text Selection Changed!" + widget.publicationId);
                 print(
                     "[Text Selection Specifications] Selected Text: ${details.selectedText}");
                 print(
@@ -235,7 +239,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
                 if (details.selectedText != null &&
                     details.selectedText!.isNotEmpty) {
-                  setState(() async {
+                  setState(()  {
                     _selectionDetails = details;
                     print(
                         "[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
