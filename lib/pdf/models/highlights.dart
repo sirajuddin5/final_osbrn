@@ -39,10 +39,10 @@ class Highlight {
 
   // Method to convert a Highlight instance to a JSON map (for request body)
   Map<String, dynamic> toJson() {
-    final x = pdfTextLines.map((e) => e['x'] as int).toList();
-    final y = pdfTextLines.map((e) => e['y'] as int).toList();
-    final width = pdfTextLines.map((e) => e['width'] as int).toList();
-    final height = pdfTextLines.map((e) => e['height'] as int).toList();
+    final x = pdfTextLines.map((e) => e['x'] as double).toList();
+    final y = pdfTextLines.map((e) => e['y'] as double).toList();
+    final width = pdfTextLines.map((e) => e['width'] as double).toList();
+    final height = pdfTextLines.map((e) => e['height'] as double).toList();
     final text = pdfTextLines.map((e) => e['text'] as String).toList();
     final page = pdfTextLines.map((e) => e['pageNumber'] as int).toList();
 
