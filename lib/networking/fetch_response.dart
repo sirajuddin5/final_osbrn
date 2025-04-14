@@ -153,6 +153,7 @@
 
 
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -181,6 +182,8 @@ Future<List<Publication>> fetchPublications(String token, BuildContext context) 
 
       // Access the 'results' key to get the list of publications
       final List<dynamic> publicationsJson = jsonResponse['results'] ?? [];
+      log("==================");
+      log(publicationsJson.toString());
       return publicationsJson
           .map((json) => Publication.fromJson(json as Map<String, dynamic>))
           .toList();
