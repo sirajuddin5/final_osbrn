@@ -91,7 +91,9 @@ class _MainPageState extends State<MainPage> {
   void _showBookmarks() async {
     final selectedPage = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => BookmarksPage()),
+      MaterialPageRoute(
+          builder: (context) =>
+              BookmarksPage(pdfController: _pdfViewerController, urldId: "")),
     );
     if (selectedPage != null) {
       _pdfViewerController.jumpToPage(selectedPage);
@@ -747,7 +749,9 @@ class _MainPageState extends State<MainPage> {
   void _showNotes() async {
     final selectedPage = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => NotesPage()),
+      MaterialPageRoute(
+          builder: (context) =>
+              NotesPage(urlId: "", pdfViewerController: _pdfViewerController)),
     );
     if (selectedPage != null) {
       _pdfViewerController.jumpToPage(selectedPage);

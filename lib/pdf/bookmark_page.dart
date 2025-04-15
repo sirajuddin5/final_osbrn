@@ -1,38 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:osborn_book/pdf/service/bookmark_service.dart';
 import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'app_state.dart';
 
 class BookmarksPage extends StatelessWidget {
+  final PdfViewerController pdfController;
+  final String urldId;
+
+  const BookmarksPage({Key? key, required this.pdfController, required this.urldId})
+      : super(key: key);
+
   @override
   Widget build(BuildContext context) {
+    final bookmarkService = BookmarkService();
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Bookmarks'),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
-          return ListView.builder(
-            itemCount: appState.bookmarks.length,
-            itemBuilder: (context, index) {
-              final bookmark = appState.bookmarks[index];
-              return ListTile(
-                title: Text('Page ${bookmark.pageNumber}'),
-                trailing: IconButton(
-                  icon: Icon(Icons.delete),
-                  onPressed: () {
-                    appState.removeBookmark(bookmark.id);
+        appBar: AppBar(
+          title: Text('Bookmarks'),
+          backgroundColor: Colors.deepPurple,
+        ),
+        body: FutureBuilder(
+          future: bookmarkService.getBookmarks(urldId),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snap.hasError) {
+              return Center(child: Text('Error: ${snap.error}'));
+            }
+
+            final data = snap.data;
+
+            if (data == null || data.data == null || data.data!.isEmpty) {
+              return const Center(child: Text('No bookmarks found'));
+            }
+
+            final list = data.data!;
+
+            return ListView.builder(
+              itemCount: list.length,
+              itemBuilder: (context, index) {
+                final bookmark = list[index];
+                return ListTile(
+                  title: Text('Page ${bookmark.page}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      if (bookmark.id != null) {
+                        bookmarkService.deleteBookmark(bookmark.id!);
+                      }
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    pdfController.jumpToPage(bookmark.page);
                   },
-                ),
-                onTap: () {
-                  // Navigate to the specific page in the PDF
-                  Navigator.of(context).pop(bookmark.pageNumber);
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
+                );
+              },
+            );
+          },
+        ));
   }
 }

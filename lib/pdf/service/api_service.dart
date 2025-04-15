@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
 
 import '../apiCalls/auth_headers.dart';
@@ -7,13 +8,18 @@ import '../constants.dart';
 
 class ApiServiceNetwork {
  final String baseUrl = ApiConstants.baseUrl;
+ final dio = Dio();
 
  // General method to make GET requests
- Future<Map<String, dynamic>> get(String endpoint) async {
+ Future<Map<String, dynamic>> get(String endpoint, {Map<String, dynamic>? body}) async {
   final headers = await AuthHeaders.withBearerToken();
-  final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers);
+  // final response = await http.get(Uri.parse('$baseUrl$endpoint'), headers: headers); 
 
-  return _handleResponse(response);
+  dio.options.headers = headers;
+  // Set Base URL
+  dio.options.baseUrl = baseUrl;
+  final response = await dio.get(endpoint, data: body);
+  return response.data as Map<String, dynamic>;
  }
 
  // General method to make POST requests

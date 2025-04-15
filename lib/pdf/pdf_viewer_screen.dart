@@ -24,14 +24,14 @@ class PdfViewerPage extends StatefulWidget {
   final String imagePath;
   final String url;
   final String urlToPdf;
-  final String publicationId;
+  final String urlId;
 
   const PdfViewerPage({
     required this.title,
     required this.imagePath,
     required this.url,
     required this.urlToPdf,
-    required this.publicationId,
+    required this.urlId,
   });
 
   @override
@@ -105,7 +105,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   void _showBookmarks() async {
     final selectedPage = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => BookmarksPage()),
+      MaterialPageRoute(
+          builder: (context) => BookmarksPage(
+                pdfController: _pdfViewerController,
+                urldId: widget.urlId,
+              )),
     );
     if (selectedPage != null) {
       _pdfViewerController.jumpToPage(selectedPage);
@@ -124,8 +128,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
             child: SfPdfViewer.file(
               onDocumentLoaded: (details) async {
                 try {
-                  final res = await highlightService
-                      .getHighlights(widget.publicationId);
+                  final res =
+                      await highlightService.getHighlights(widget.urlId);
                   log("log message " + res.toString());
 
                   if (res.status ?? false) {
@@ -230,7 +234,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
                 print(
                     "[Text Selection Specifications] Text Selection Changed!" +
-                        widget.publicationId);
+                        widget.urlId);
                 print(
                     "[Text Selection Specifications] Selected Text: ${details.selectedText}");
                 print(
@@ -267,7 +271,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
                     _highlight = Highlight(
                         id: '',
-                        publicationReaderId: widget.publicationId,
+                        publicationReaderId: widget.urlId,
                         pdfTextLines: list);
                   });
                 }
@@ -400,7 +404,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         builder: (context) => HighlightsPage(
           // Pass the highlights data to HighlightsPage
           pdfViewerController: _pdfViewerController,
-          urlId: widget.publicationId,
+          urlId: widget.urlId,
         ),
       ),
     );
@@ -414,7 +418,9 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   void _showNotes() async {
     final selectedPage = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => NotesPage()),
+      MaterialPageRoute(
+          builder: (context) => NotesPage(
+              urlId: widget.urlId, pdfViewerController: _pdfViewerController)),
     );
     if (selectedPage != null) {
       _pdfViewerController.jumpToPage(selectedPage);

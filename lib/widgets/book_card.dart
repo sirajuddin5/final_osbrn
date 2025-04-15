@@ -67,7 +67,12 @@ class BookCard extends StatelessWidget {
   final String urlToPdf;
   final String publicationId;
 
-  BookCard({required this.title, required this.imagePath, required this.url,required this.urlToPdf,required this.publicationId});
+  BookCard(
+      {required this.title,
+      required this.imagePath,
+      required this.url,
+      required this.urlToPdf,
+      required this.publicationId});
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +82,20 @@ class BookCard extends StatelessWidget {
         Navigator.push(
           context,
           // MaterialPageRoute(builder: (context) =>  WebViewScreen(url: url,urlToPdf: urlToPdf,)),
-          MaterialPageRoute(builder: (context) =>  PdfViewerPage(title: title, imagePath: imagePath, url: url, urlToPdf: urlToPdf, publicationId: publicationId,)),
+          MaterialPageRoute(
+              builder: (context) => PdfViewerPage(
+                    title: title,
+                    imagePath: imagePath,
+                    url: url,
+                    urlToPdf: urlToPdf,
+                    urlId: publicationId,
+                  )),
         );
       },
       child: Card(
         color: Colors.white,
-        shape:const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.zero)),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.zero)),
         elevation: 4,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -94,7 +107,8 @@ class BookCard extends StatelessWidget {
                 child: Image.network(
                   imagePath,
                   fit: BoxFit.cover,
-                  errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+                  errorBuilder: (BuildContext context, Object exception,
+                      StackTrace? stackTrace) {
                     return const Center(
                       child: Icon(
                         Icons.cloud_download,
@@ -110,7 +124,7 @@ class BookCard extends StatelessWidget {
               padding: const EdgeInsets.all(8.0),
               child: Text(
                 title,
-                style:const TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -130,7 +144,7 @@ class WebViewScreen extends StatelessWidget {
   final String url;
   final String? urlToPdf;
 
-  WebViewScreen({required this.url,  this.urlToPdf});
+  WebViewScreen({required this.url, this.urlToPdf});
 
   @override
   Widget build(BuildContext context) {

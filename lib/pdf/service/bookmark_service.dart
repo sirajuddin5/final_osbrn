@@ -1,3 +1,4 @@
+import 'package:osborn_book/pdf/models/base_response_model.dart';
 
 import '../constants.dart';
 import '../models/bookmarks.dart';
@@ -7,21 +8,27 @@ class BookmarkService {
   final ApiServiceNetwork _apiService = ApiServiceNetwork();
 
   // Create a new Bookmark (POST)
-  Future<Bookmark> createBookmark(Bookmark bookmark) async {
-    final response = await _apiService.post(ApiConstants.bookmarksEndpoint, bookmark.toJson());
-    return Bookmark.fromJson(response);
+  Future<BaseResponseModel<Bookmark>> createBookmark(Bookmark bookmark) async {
+    final response = await _apiService.post(
+        ApiConstants.bookmarksEndpoint, bookmark.toJson());
+    return BaseResponseModel<Bookmark>.fromJson(response);
   }
 
   // Get all Bookmarks (GET)
-  Future<List<Bookmark>> getBookmarks() async {
-    final response = await _apiService.get(ApiConstants.bookmarksEndpoint);
-    List<dynamic> data = response['data'] ?? [];
-    return data.map((item) => Bookmark.fromJson(item)).toList();
+  Future<BaseResponseModel<List<Bookmark>>> getBookmarks(
+      String publicationId) async {
+    final response = await _apiService.get(
+      ApiConstants.bookmarksEndpoint,
+      body: {'publication_id': publicationId},
+    );
+
+    return BaseResponseModel<List<Bookmark>>.fromJson(response);
   }
 
   // Delete a Bookmark (DELETE)
-  Future<void> deleteBookmark(int id) async {
-    final response = await _apiService.delete('${ApiConstants.bookmarksEndpoint}/$id');
+  Future<void> deleteBookmark(String id) async {
+    final response =
+        await _apiService.delete('${ApiConstants.bookmarksEndpoint}/$id');
     // Optionally handle the response if you need confirmation or data
     if (response['status'] != 'success') {
       throw Exception('Failed to delete bookmark');
