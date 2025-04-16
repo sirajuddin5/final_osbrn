@@ -435,7 +435,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         title: Text("Add a Note"),
         content: TextField(
           controller: noteController,
-          decoration: InputDecoration(hintText: "Enter your note here"),
+        decoration: InputDecoration(hintText: "Enter your note here"),
         ),
         actions: [
           TextButton(

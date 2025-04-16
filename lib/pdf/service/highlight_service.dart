@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:osborn_book/pdf/models/base_response_model.dart';
 
@@ -33,7 +34,8 @@ class HighlightService {
     return BaseResponseModel<List<Highlight>>.fromJson(response);
   }
 
-  Future<BaseResponseModel<Highlight>> getHighlightByPage(String publicationId, int page) async {
+  Future<BaseResponseModel<Highlight>> getHighlightByPage(
+      String publicationId, int page) async {
     try {
       final headers =
           await AuthHeaders.withBearerToken(); // Get headers with token
@@ -52,7 +54,8 @@ class HighlightService {
         // If the request is successful, parse the response body
         String responseBody = await response.stream.bytesToString();
         var data = json.decode(responseBody); // Convert to JSON
-        return BaseResponseModel<Highlight>.fromJson(data); // Parse it into a Highlight model
+        return BaseResponseModel<Highlight>.fromJson(
+            data); // Parse it into a Highlight model
       } else {
         throw Exception(
             'Failed to load highlight on page $page: ${response.reasonPhrase}');
@@ -77,8 +80,10 @@ class HighlightService {
     final response = await _apiService.delete(
       '${ApiConstants.highlightsEndpoint}/$id',
     );
+
+    log(response.toString());
     // Optionally handle the response if you need confirmation or data
-    if (response['status'] != 'success') {
+    if (response['status'] != true) {
       throw Exception('Failed to delete highlight');
     }
   }
