@@ -343,11 +343,9 @@
 //   }
 // }
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../networking/fetch_response.dart';
 import '../networking/publication_model.dart';
-import '../publication_screen.dart';
 import '../widgets/all_books.dart';
 import '../widgets/custom_drawer.dart';
 

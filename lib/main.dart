@@ -4,8 +4,6 @@ import 'package:osborn_book/connectivity/internet_controller.dart';
 import 'package:osborn_book/home/home_page.dart';
 import 'package:osborn_book/onboarding/onboarding_page.dart';
 import 'package:osborn_book/pdf/app_state.dart';
-import 'package:osborn_book/pdf/pdf_viewer_screen.dart';
-import 'package:osborn_book/publication_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

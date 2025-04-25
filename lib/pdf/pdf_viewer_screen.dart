@@ -2,7 +2,6 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:osborn_book/pdf/search_toolbar.dart';
 import 'package:osborn_book/pdf/service/highlight_service.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,7 +14,6 @@ import 'app_state.dart';
 import 'bookmark.dart';
 import 'bookmark_page.dart';
 import 'grid_page.dart';
-import 'highlights_page.dart';
 import 'models/highlights.dart';
 import 'notes_page.dart';
 

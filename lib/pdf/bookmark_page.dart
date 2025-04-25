@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:osborn_book/pdf/service/bookmark_service.dart';
-import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import 'app_state.dart';
 
 class BookmarksPage extends StatelessWidget {
   final PdfViewerController pdfController;
   final String urldId;
 
-  const BookmarksPage({Key? key, required this.pdfController, required this.urldId})
-      : super(key: key);
+  const BookmarksPage({super.key, required this.pdfController, required this.urldId});
 
   @override
   Widget build(BuildContext context) {

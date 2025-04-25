@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:osborn_book/pdf/service/notes_service.dart';
-import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-
-import 'app_state.dart';
 
 // class NotesPage extends StatelessWidget {
 //   @override

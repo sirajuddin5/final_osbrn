@@ -157,7 +157,6 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:osborn_book/main.dart';
 import 'package:osborn_book/networking/publication_model.dart';
 
 import '../pdf/downloaded_pdf_list.dart';
