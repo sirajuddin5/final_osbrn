@@ -76,12 +76,11 @@ import '../pdf/downloaded_pdf_list.dart';
 import '../shared_prefrences/shared_prefremces.dart';
 
 class CustomDrawer extends StatefulWidget {
-  const CustomDrawer({super.key});
   @override
-  CustomDrawerState createState() => CustomDrawerState();
+  _CustomDrawerState createState() => _CustomDrawerState();
 }
 
-class CustomDrawerState extends State<CustomDrawer> {
+class _CustomDrawerState extends State<CustomDrawer> {
   String _selectedItem = 'All Books'; // Default selected item
 
   @override
@@ -112,13 +111,11 @@ class CustomDrawerState extends State<CustomDrawer> {
               trailing: Icon(Icons.arrow_forward_ios, color: Colors.white),
               focusColor: Colors.green[900],
               selectedTileColor: Colors.green[900],
-              tileColor: _selectedItem == 'All Books'
-                  ? Color(0xff114f4d)
-                  : Colors.transparent,
+              tileColor: _selectedItem == 'All Books' ? Color(0xff114f4d) : Colors.transparent,
               onTap: () {
                 setState(() {
                   _selectedItem = 'All Books';
-                  Navigator.pop(context); // Update selected item
+                  Navigator.pop(context);// Update selected item
                 });
                 // Navigate to the All Books page
               },
@@ -127,9 +124,7 @@ class CustomDrawerState extends State<CustomDrawer> {
               leading: Icon(Icons.save_alt, color: Colors.white),
               title: Text('On Device', style: TextStyle(color: Colors.white)),
               trailing: Icon(Icons.arrow_forward_ios, color: Colors.white),
-              tileColor: _selectedItem == 'On Device'
-                  ? Color(0xff114f4d)
-                  : Colors.transparent,
+              tileColor: _selectedItem == 'On Device' ? Color(0xff114f4d) : Colors.transparent,
               onTap: () {
                 Navigator.push(
                   context,
@@ -146,8 +141,7 @@ class CustomDrawerState extends State<CustomDrawer> {
             ListTile(
               leading: Icon(Icons.exit_to_app, color: Colors.white),
               title: Text('Sign Out', style: TextStyle(color: Colors.white)),
-              subtitle: Text('books@osbornebooks.co.uk',
-                  style: TextStyle(color: Colors.white)),
+              subtitle: Text('books@osbornebooks.co.uk', style: TextStyle(color: Colors.white)),
               onTap: () {
                 // Sign out logic
                 // _showLogoutDialog(context);

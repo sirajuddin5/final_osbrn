@@ -15,8 +15,8 @@ void showCustomAlertDialog(BuildContext context, Future<void> Function() logout)
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
-              padding: const EdgeInsets.all(16.0),
-              child: const Text(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
                 'Sign Out',
                 style: TextStyle(
                   color: Colors.white,
