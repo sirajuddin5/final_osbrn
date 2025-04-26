@@ -2,9 +2,15 @@ import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/get_connect/http/src/utils/utils.dart';
+import 'package:osborn_book/pdf/models/base_response_model.dart';
+import 'package:osborn_book/pdf/models/bookmarks.dart';
+import 'package:osborn_book/pdf/models/notes.dart';
 import 'package:osborn_book/pdf/search_toolbar.dart';
+import 'package:osborn_book/pdf/service/bookmark_service.dart';
 import 'package:osborn_book/pdf/service/highlight_service.dart';
+import 'package:osborn_book/pdf/service/notes_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,7 +18,6 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../HighLightsPage.dart';
 import 'app_state.dart';
-import 'bookmark.dart';
 import 'bookmark_page.dart';
 import 'grid_page.dart';
 import 'highlights_page.dart';
@@ -27,6 +32,7 @@ class PdfViewerPage extends StatefulWidget {
   final String urlId;
 
   const PdfViewerPage({
+    super.key,
     required this.title,
     required this.imagePath,
     required this.url,
@@ -35,7 +41,7 @@ class PdfViewerPage extends StatefulWidget {
   });
 
   @override
-  _PdfViewerPageState createState() => _PdfViewerPageState();
+  State<PdfViewerPage> createState() => _PdfViewerPageState();
 }
 
 class _PdfViewerPageState extends State<PdfViewerPage> {
@@ -46,7 +52,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   bool showDialogOnce = false; // Prevent multiple dialog calls
 
   //// copied code
-  int _selectedIndex = 0;
   final PdfViewerController _pdfViewerController = PdfViewerController();
   final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
   final GlobalKey<SearchToolbarState> _textSearchKey = GlobalKey();
@@ -54,8 +59,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   late bool _showToolbar;
   late bool _showScrollHead;
   LocalHistoryEntry? _historyEntry;
+  bool shouldUpdateHighlight = false;
+  bool shouldUpdateNote = false;
 
   final HighlightService highlightService = HighlightService();
+  final NoteService noteService = NoteService();
 
   Future<void> initializeDb() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
@@ -76,12 +84,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       },
     );
     Provider.of<AppState>(context, listen: false).setDatabase(database);
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   void ensureHistoryEntry() {
@@ -116,9 +118,61 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     }
   }
 
+  updateHighlights() async {
+    try {
+      final res = await highlightService.getHighlights(widget.urlId);
+      log("log message " + res.toString());
+
+      if (res.status ?? false) {
+        for (var d in res.data!) {
+          List<PdfTextLine> list = [];
+          for (var t in d.pdfTextLines) {
+            list.add(PdfTextLine(
+                Rect.fromLTWH(t["x"], t["y"], t["width"], t["height"]),
+                t["text"],
+                t["pageNumber"]));
+          }
+
+          final high = HighlightAnnotation(textBoundsCollection: list);
+          _pdfViewerController.addAnnotation(high);
+        }
+      } else {
+        log("No highlights found");
+      }
+    } catch (e) {
+      log("Error: $e");
+    }
+  }
+
+  updateNotes() async {
+    try {
+      final noteRes = await noteService.getNotes(widget.urlId);
+      if (noteRes.status ?? false) {
+        for (var d in noteRes.data!) {
+          _notes.add(d);
+          _pdfViewerController.addAnnotation(
+            StickyNoteAnnotation(
+              pageNumber: d.page,
+              text: d.text,
+              position: Offset(d.x, d.y),
+              icon: PdfStickyNoteIcon.note,
+            ),
+          );
+        }
+      } else {
+        log("No notes found");
+      }
+    } catch (e) {
+      log("Error: $e");
+    }
+  }
+
   late List<int> myanno;
 
   Highlight? _highlight;
+  Note? _selectedNote;
+  Note? _note;
+  List<Note> _notes = [];
 
   Widget _buildPdfViewer() {
     return Stack(children: [
@@ -126,46 +180,41 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
         children: [
           Expanded(
             child: SfPdfViewer.file(
-              onDocumentLoaded: (details) async {
-                try {
-                  final res =
-                      await highlightService.getHighlights(widget.urlId);
-                  log("log message " + res.toString());
-
-                  if (res.status ?? false) {
-                    if (res.data == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                        content: Text('No highlights found'),
-                      ));
+              onAnnotationSelected: (annotation) {
+                if (annotation is StickyNoteAnnotation) {
+                  _selectedNote = _notes.firstWhere((note) {
+                    if (note.page == annotation.pageNumber &&
+                        note.x == annotation.position.dx &&
+                        note.y == annotation.position.dy) {
+                      return true;
                     }
-                    for (var d in res.data!) {
-                      List<PdfTextLine> list = [];
-
-                      for (var t in d.pdfTextLines) {
-                        list.add(PdfTextLine(
-                            Rect.fromLTWH(
-                                t["x"], t["y"], t["width"], t["height"]),
-                            t["text"],
-                            t["pageNumber"]));
-                      }
-
-                      final high =
-                          HighlightAnnotation(textBoundsCollection: list);
-                      _pdfViewerController.addAnnotation(high);
-                    }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(res.message ?? "Something went wrong"),
-                    ));
-                  }
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                    return false;
+                  });
                 }
+              },
+              onAnnotationEdited: (annotation) async {
+                if (annotation is StickyNoteAnnotation) {
+                  final note = Note(
+                    publicationId: widget.urlId,
+                    page: annotation.pageNumber,
+                    x: annotation.position.dx,
+                    y: annotation.position.dy,
+                    color: Colors.yellow.value.toString(),
+                    text: annotation.text,
+                  );
+                  try {
+                    await noteService.updateNote(_selectedNote!.id!, note);
+                    Get.showSnackbar(const GetSnackBar(
+                        duration: Duration(seconds: 1),
+                        message: "Note Updated"));
+                  } catch (e) {
+                    log("Error updating note: $e");
+                  }
+                }
+              },
+              onDocumentLoaded: (details) async {
+                await updateHighlights();
+                await updateNotes();
               },
               File(pdfPath),
               controller: _pdfViewerController,
@@ -174,80 +223,68 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
               // When annotation is added (e.g., highlight)
               onAnnotationAdded: (Annotation annotation) async {
-                print(
-                    "[Highlight Specifications] Annotation Added: $annotation");
-                print(
-                    "[Highlight Specifications] Current Page Number: ${_pdfViewerController.pageNumber}");
-                print(
-                    "[Highlight Specifications] Raam Value: ${Provider.of<AppState>(context, listen: false).raam}");
+                log("[Highlight Specifications] Annotation Added: $annotation");
+                log("[Highlight Specifications] Current Page Number: ${_pdfViewerController.pageNumber}");
+                log("[Highlight Specifications] Raam Value: ${Provider.of<AppState>(context, listen: false).raam}");
 
                 // Update the state with the new highlight
                 if (_selectionDetails != null) {
                   final Rect? region = _selectionDetails!.globalSelectedRegion;
 
-                  if (region != null) {
-                    final double x = region.left;
-                    final double y = region.top;
-                    final double width = region.width;
-                    final double height = region.height;
-                    final int color = annotation.color.value;
+                  if (annotation is HighlightAnnotation) {
+                    if (region != null) {
+                      final double x = region.left;
+                      final double y = region.top;
+                      final double width = region.width;
+                      final double height = region.height;
+                      final int color = annotation.color.value;
 
-                    try {
-                      if (_highlight != null) {
-                        log("==============================================");
-                        log(_highlight!.publicationReaderId.toString());
-                        final res =
-                            await highlightService.createHighlight(_highlight!);
+                      try {
+                        if (_highlight != null) {
+                          log("==============================================");
+                          log(_highlight!.publicationReaderId.toString());
+                          final res = await highlightService
+                              .createHighlight(_highlight!);
 
-                        if (res.status ?? false) {
-                          _highlight = null;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text("Highlight Created Successfully")),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(res.message ??
-                                    "Failed to create highlight")),
-                          );
+                          if (res.status ?? false) {
+                            _highlight = null;
+                            shouldUpdateHighlight = true;
+                            // await updateHighlights();
+                            // await updateNotes();
+                            Get.showSnackbar(
+                              const GetSnackBar(
+                                  duration: Duration(seconds: 1),
+                                  message: "Highlight Created Successfully"),
+                            );
+                          }
                         }
+                      } catch (e) {
+                        log("Error creating highlight: $e");
                       }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Error: $e")),
-                      );
-                    }
 
-                    Provider.of<AppState>(context, listen: false).addHighlight(
-                      _pdfViewerController.pageNumber ??
-                          1, // Ensure non-null page number
-                      Provider.of<AppState>(context, listen: false).raam,
-                      x, y, width, height, color,
-                    );
+                      // Provider.of<AppState>(context, listen: false).addHighlight(
+                      //   _pdfViewerController.pageNumber ??
+                      //       1, // Ensure non-null page number
+                      //   Provider.of<AppState>(context, listen: false).raam,
+                      //   x, y, width, height, color,
+                      // );
+                    }
                   }
                 }
               },
 
               // When text selection is changed
               onTextSelectionChanged: (PdfTextSelectionChangedDetails details) {
-                print(
-                    "[Text Selection Specifications] Text Selection Changed!" +
-                        widget.urlId);
-                print(
-                    "[Text Selection Specifications] Selected Text: ${details.selectedText}");
-                print(
-                    "[Text Selection Specifications] Global Selected Region: ${details.globalSelectedRegion}");
-                print(
-                    "[Text Selection Specifications] Text Selection Details: ${details.toString()}");
+                log("[Text Selection Specifications] Text Selection Changed! ${widget.urlId}");
+                log("[Text Selection Specifications] Selected Text: ${details.selectedText}");
+                log("[Text Selection Specifications] Global Selected Region: ${details.globalSelectedRegion}");
+                log("[Text Selection Specifications] Text Selection Details: ${details.toString()}");
 
                 if (details.selectedText != null &&
                     details.selectedText!.isNotEmpty) {
                   setState(() {
                     _selectionDetails = details;
-                    print(
-                        "[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
+                    log("[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
 
                     // Update the state with the selected text
                     Provider.of<AppState>(context, listen: false)
@@ -268,6 +305,15 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                       map['height'] = line.bounds.height;
                       list.add(map);
                     }
+
+                    _note = Note(
+                      publicationId: widget.urlId,
+                      page: _pdfViewerController.pageNumber,
+                      x: pdfTextLines?.first.bounds.left ?? 0,
+                      y: pdfTextLines?.first.bounds.top ?? 0,
+                      color: Colors.yellow.value.toString(),
+                      text: _selectionDetails!.selectedText as String,
+                    );
 
                     _highlight = Highlight(
                         id: '',
@@ -319,72 +365,13 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.highlight),
-                    onPressed: () {
-                      print(
-                          "[Highlight Specifications] Highlighting Text: ${_selectionDetails!.selectedText}");
-
-                      // Add the highlight to the app state
-                      final Rect? region =
-                          _selectionDetails!.globalSelectedRegion;
-                      if (region != null) {
-                        final double x = region.left;
-                        final double y = region.top;
-                        final double width = region.width;
-                        final double height = region.height;
-                        final int color = Colors.yellow.value;
-
-                        Provider.of<AppState>(context, listen: false)
-                            .addHighlight(
-                          _pdfViewerController.pageNumber ??
-                              1, // Ensure non-null page number
-                          _selectionDetails!.selectedText!,
-                          x, y, width, height, color,
-                        );
-                      }
-
-                      // Show a Snackbar to confirm highlighting
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Text highlighted!")));
-                      _selectionDetails = null;
-                      setState(() {});
-
-                      //final Rect? region = _selectionDetails!.globalSelectedRegion;
-
-                      try {
-                        // Calling the createHighlight service method
-                        print("==============================================");
-                        print("inside try for highlight saving");
-                        if (_highlight != null) {
-                          final createdHighlight =
-                              highlightService.createHighlight(_highlight!);
-                          print("outside try for highlight saving");
-                          print(createdHighlight);
-                          print(
-                              "==============================================");
-                        }
-
-                        // Show success message with the created highlight's details
-                        // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        //   content: Text('Highlight created: ${createdHighlight.text}'),
-                        // ));
-                      } catch (e) {
-                        // Handle any errors
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Failed to create highlight: $e'),
-                        ));
-                      }
-                    },
-                  ),
-                  IconButton(
                     icon: Icon(Icons.note_add),
                     onPressed: () {
-                      print(
-                          "[Note Specifications] Adding Note for Text: ${_selectionDetails!.selectedText}");
+                      log("[Note Specifications] Adding Note for Text: ${_selectionDetails!.selectedText}");
 
                       // Open the note dialog for adding a note
                       _addNoteDialog(
-                        _pdfViewerController.pageNumber!,
+                        _pdfViewerController.pageNumber,
                         _selectionDetails!.selectedText!,
                       );
                     },
@@ -432,24 +419,52 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Add a Note"),
+        title: const Text("Add a Note"),
         content: TextField(
           controller: noteController,
-        decoration: InputDecoration(hintText: "Enter your note here"),
+          decoration: const InputDecoration(hintText: "Enter your note here"),
         ),
         actions: [
           TextButton(
             onPressed: () async {
-              await Provider.of<AppState>(context, listen: false).addNote(
-                pageNumber,
-                selectedText,
-                noteController.text,
-              );
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text("Note added!")));
+              // await Provider.of<AppState>(context, listen: false).addNote(
+              //   pageNumber,
+              //   selectedText,
+              //   noteController.text,
+              // );
+              try {
+                final BaseResponseModel<Note>? res;
+                if (_note != null) {
+                  res = await noteService.createNote(
+                    _note!,
+                  );
+                } else {
+                  return;
+                }
+                // shouldUpdateNote = true;
+                // await updateNotes();
+                Get.showSnackbar(const GetSnackBar(
+                    duration: Duration(seconds: 1),
+                    message: "Note Added Successfully"));
+                _pdfViewerController.addAnnotation(StickyNoteAnnotation(
+                  pageNumber: pageNumber,
+                  text: _note!.text,
+                  position: Offset(
+                    _note!.x,
+                    _note!.y,
+                  ),
+                  icon: PdfStickyNoteIcon.note,
+                ));
+                _notes.add(res.data!);
+
+                Navigator.of(context).pop();
+              } catch (e) {
+                log("Error adding note: $e");
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //     const SnackBar(content: Text("Failed to add note:")));
+              }
             },
-            child: Text("Save"),
+            child: const Text("Save"),
           ),
         ],
       ),
@@ -461,7 +476,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     _showToolbar = false;
     _showScrollHead = true;
     super.initState();
-    initializeDb();
+    // initializeDb();
     if (widget.urlToPdf.isEmpty) {
       setState(() {
         isLoading = false; // Set loading to false to show the image
@@ -546,10 +561,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       File cachedPdf = File(pdfPath);
       await cachedPdf.copy(appFilePath);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('PDF downloaded to app\'s storage!'),
-          duration: Duration(seconds: 2),
+      Get.showSnackbar(
+        const GetSnackBar(
+          duration: Duration(seconds: 1),
+          message: 'PDF downloaded to app\'s storage!',
         ),
       );
 
@@ -714,23 +729,37 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                               color: Colors.white,
                               size: 28,
                             ),
-                            onPressed: () {
+                            onPressed: () async {
                               final currentPage =
                                   _pdfViewerController.pageNumber;
                               final bookmark = Bookmark(
-                                id: 'page_$currentPage',
-                                pageNumber: currentPage,
+                                page: currentPage,
+                                publicationId: widget.urlId,
                               );
 
-                              Provider.of<AppState>(context, listen: false)
-                                  .addBookmark(bookmark)
-                                  .then((_) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text('Page $currentPage bookmarked')),
+                              final bookmarkService = BookmarkService();
+                              try {
+                                await bookmarkService.createBookmark(
+                                  bookmark,
                                 );
-                              });
+                                Get.showSnackbar(
+                                  GetSnackBar(
+                                      duration: Duration(seconds: 1),
+                                      message: 'Page $currentPage bookmarked'),
+                                );
+                              } catch (e) {
+                                log("Error creating bookmark: $e");
+                              }
+
+                              // Provider.of<AppState>(context, listen: false)
+                              //     .addBookmark(bookmark)
+                              //     .then((_) {
+                              //   ScaffoldMessenger.of(context).showSnackBar(
+                              //     SnackBar(
+                              //         content:
+                              //             Text('Page $currentPage bookmarked')),
+                              //   );
+                              // });
                             },
                           ),
                           IconButton(

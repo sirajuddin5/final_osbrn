@@ -41,8 +41,5 @@ class NoteService {
       '${ApiConstants.notesEndpoint}/$id',
     );
     // Optionally handle the response if you need confirmation or data
-    if (response['status'] != 'success') {
-      throw Exception('Failed to delete note');
-    }
   }
 }
