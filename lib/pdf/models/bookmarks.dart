@@ -22,11 +22,11 @@ class Bookmark {
   // Method to convert a Bookmark instance to a JSON map (for request body)
   Map<String, dynamic> toJson() {
     return {
-      // 'id': id,
+      'id': id,
       'page': page,
       'publication_id': publicationId,
-      // 'created_at': createdAt?.toIso8601String(),
-      // 'updated_at': updatedAt?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 }

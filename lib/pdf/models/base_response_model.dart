@@ -1,6 +1,5 @@
 import 'package:osborn_book/pdf/models/bookmarks.dart';
 import 'package:osborn_book/pdf/models/highlights.dart';
-import 'package:osborn_book/pdf/models/mark.dart';
 import 'package:osborn_book/pdf/models/notes.dart';
 
 class BaseResponseModel<T> {
@@ -24,10 +23,6 @@ class BaseResponseModel<T> {
       data = (json['data']["bookmarks"] as List)
           .map((e) => Bookmark.fromJson(e))
           .toList();
-    } else if (type == Mark) {
-      data = Mark.fromJson(json['data']["data"]);
-    } else if (type == List<Mark>) {
-      data = (json['data']["bookmarks"] as List).map((e) => Mark.fromJson(e)).toList();
     } else if (type == Note) {
       data = Note.fromJson(json['data']["note"]);
     } else if (type == List<Note>) {

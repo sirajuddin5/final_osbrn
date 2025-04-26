@@ -78,18 +78,12 @@ import 'app_state.dart';
 //   }
 // }
 
-class NotesPage extends StatefulWidget {
+class NotesPage extends StatelessWidget {
   final PdfViewerController pdfViewerController;
   final String urlId;
 
-  const NotesPage(
-      {super.key, required this.pdfViewerController, required this.urlId});
+  NotesPage({required this.pdfViewerController, required this.urlId});
 
-  @override
-  State<NotesPage> createState() => _NotesPageState();
-}
-
-class _NotesPageState extends State<NotesPage> {
   @override
   Widget build(BuildContext context) {
     final noteService = NoteService();
@@ -100,7 +94,7 @@ class _NotesPageState extends State<NotesPage> {
         backgroundColor: Colors.deepPurple,
       ),
       body: FutureBuilder(
-        future: noteService.getNotes(widget.urlId),
+        future: noteService.getNotes(urlId),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -108,7 +102,7 @@ class _NotesPageState extends State<NotesPage> {
           if (snap.hasError) {
             return Center(child: Text('Error: ${snap.error}'));
           }
-
+          
           final data = snap.data;
           if (data == null || data.data == null || data.data!.isEmpty) {
             return const Center(child: Text('No notes found'));
@@ -121,49 +115,41 @@ class _NotesPageState extends State<NotesPage> {
             itemBuilder: (context, index) {
               final note = list[index];
               return Dismissible(
-                key: Key(note.id!),
+                key: Key(note.id),
                 background: Container(
                   color: Colors.red,
                   alignment: Alignment.centerRight,
                   padding: EdgeInsets.only(right: 20.0),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  child: Icon(Icons.delete, color: Colors.white),
                 ),
                 direction: DismissDirection.endToStart,
                 onDismissed: (direction) {
-                  noteService.deleteNote(note.id!);
+                  noteService.deleteNote(note.id);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Note deleted')),
+                    SnackBar(content: Text('Note deleted')),
                   );
                 },
                 child: ListTile(
-                  title: Text(note.text),
+                  title: Text('Page: ${note.page}'),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Page ${note.page}",
+                        note.text,
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
                       Text(
-                        "At ${note.x?.toStringAsFixed(2)} ${note.y?.toStringAsFixed(2)}",
+                        note.publicationId,
                         softWrap: true,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 2,
                       ),
                     ],
                   ),
-                  trailing: IconButton(
-                      onPressed: () {
-                        noteService.deleteNote(note.id!).then((value) {
-                          setState(() {});
-                        });
-                      },
-                      icon: const Icon(Icons.delete)),
                   onTap: () {
-                    widget.pdfViewerController.jumpToPage(note.page);
-                    Navigator.pop(context);
+                    pdfViewerController.jumpToPage(note.page);
                   },
                 ),
               );

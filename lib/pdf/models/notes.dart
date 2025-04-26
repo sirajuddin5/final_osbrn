@@ -1,23 +1,23 @@
 // note_model.dart
 class Note {
-  final String? id;
+  final String id;
   final String publicationId;
   final int page;
-  final double? x;
-  final double? y;
-  final String? color;
+  final double x;
+  final double y;
+  final String color;
   final String text;
-  final String? createdAt;
+  final String createdAt;
 
   Note({
-    this.id,
+    required this.id,
     required this.publicationId,
     required this.page,
-    this.x,
-    this.y,
+    required this.x,
+    required this.y,
     required this.color,
     required this.text,
-    this.createdAt,
+    required this.createdAt,
   });
 
   // Factory constructor to create a Note instance from JSON
@@ -37,7 +37,7 @@ class Note {
   // Method to convert a Note instance to a JSON map (for request body)
   Map<String, dynamic> toJson() {
     return {
-      'publication_id': publicationId,
+      'publicationId': publicationId,
       'page': page,
       'x': x,
       'y': y,
