@@ -130,7 +130,7 @@ class _NotesPageState extends State<NotesPage> {
                 ),
                 direction: DismissDirection.endToStart,
                 onDismissed: (direction) {
-                  noteService.deleteNote(note.id!);
+                  noteService.deleteNote(note.id!, note.publicationId);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Note deleted')),
                   );
@@ -156,7 +156,7 @@ class _NotesPageState extends State<NotesPage> {
                   ),
                   trailing: IconButton(
                       onPressed: () {
-                        noteService.deleteNote(note.id!).then((value) {
+                        noteService.deleteNote(note.id!, note.publicationId).then((value) {
                           setState(() {});
                         });
                       },

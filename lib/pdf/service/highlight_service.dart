@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:osborn_book/pdf/models/base_response_model.dart';
+import 'package:osborn_book/pdf/models/local_highlight.dart';
+import 'package:osborn_book/pdf/service/hive_service.dart';
 
 import '../apiCalls/auth_headers.dart';
 import '../models/highlights.dart';
@@ -21,7 +23,39 @@ class HighlightService {
     );
     print("========create highlight =========");
     print(response);
-    return BaseResponseModel<Highlight>.fromJson(response);
+    
+    // Simultaneously save to local storage
+    BaseResponseModel<Highlight> responseModel = BaseResponseModel<Highlight>.fromJson(response);
+    if (responseModel.status == true && responseModel.data != null) {
+      try {
+        // Create PdfTextLineLocal objects from the highlight text lines
+        List<PdfTextLineLocal> textLines = [];
+        for (var line in highlight.pdfTextLines) {
+          textLines.add(PdfTextLineLocal(
+            x: line['x'] as double,
+            y: line['y'] as double,
+            width: line['width'] as double,
+            height: line['height'] as double,
+            text: line['text'] as String,
+            pageNumber: line['pageNumber'] as int,
+          ));
+        }
+        
+        // Create LocalHighlight object
+        final localHighlight = LocalHighlight(
+          id: responseModel.data!.id,
+          publicationReaderId: highlight.publicationReaderId,
+          pdfTextLines: textLines,
+        );
+        
+        // Save to Hive
+        await HiveService.saveHighlight(highlight.publicationReaderId, localHighlight);
+      } catch (e) {
+        log("Error saving highlight locally: $e");
+      }
+    }
+    
+    return responseModel;
   }
 
   // Get all Highlights (GET)

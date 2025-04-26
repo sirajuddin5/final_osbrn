@@ -1,5 +1,8 @@
 // adjust based on your project structure
+import 'dart:developer';
 import 'package:osborn_book/pdf/models/base_response_model.dart';
+import 'package:osborn_book/pdf/models/local_note.dart';
+import 'package:osborn_book/pdf/service/hive_service.dart';
 
 import '../models/notes.dart';
 import 'api_service.dart';
@@ -14,7 +17,22 @@ class NoteService {
       ApiConstants.notesEndpoint,
       note.toJson(),
     );
-    return BaseResponseModel<Note>.fromJson(response);
+    
+    // Simultaneously save to local storage
+    BaseResponseModel<Note> responseModel = BaseResponseModel<Note>.fromJson(response);
+    if (responseModel.status == true && responseModel.data != null) {
+      try {
+        // Create LocalNote from returned note
+        final localNote = LocalNote.fromNote(responseModel.data!);
+        
+        // Save to Hive
+        await HiveService.saveNote(note.publicationId, localNote);
+      } catch (e) {
+        log("Error saving note locally: $e");
+      }
+    }
+    
+    return responseModel;
   }
 
   // Get all Notes for a publication (GET)
@@ -32,14 +50,35 @@ class NoteService {
       '${ApiConstants.notesEndpoint}/$id',
       note.toJson(),
     );
-    return BaseResponseModel<Note>.fromJson(response);
+    
+    // Simultaneously update in local storage
+    BaseResponseModel<Note> responseModel = BaseResponseModel<Note>.fromJson(response);
+    if (responseModel.status == true && responseModel.data != null) {
+      try {
+        // Create LocalNote from returned note
+        final localNote = LocalNote.fromNote(responseModel.data!);
+        
+        // Save to Hive
+        await HiveService.saveNote(note.publicationId, localNote);
+      } catch (e) {
+        log("Error updating note locally: $e");
+      }
+    }
+    
+    return responseModel;
   }
 
   // Delete a Note (DELETE)
-  Future<void> deleteNote(String id) async {
+  Future<void> deleteNote(String id, String publicationId) async {
     final response = await _apiService.delete(
       '${ApiConstants.notesEndpoint}/$id',
     );
-    // Optionally handle the response if you need confirmation or data
+    
+    // Also delete from local storage if server delete was successful
+    try {
+      await HiveService.deleteNote(publicationId, id);
+    } catch (e) {
+      log("Error deleting note locally: $e");
+    }
   }
 }

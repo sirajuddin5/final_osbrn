@@ -48,7 +48,7 @@ class BookmarksPage extends StatelessWidget {
                     icon: const Icon(Icons.delete),
                     onPressed: () {
                       if (bookmark.id != null) {
-                        bookmarkService.deleteBookmark(bookmark.id!);
+                        bookmarkService.deleteBookmark(bookmark.id!, bookmark.publicationId);
                       }
                     },
                   ),

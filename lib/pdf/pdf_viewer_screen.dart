@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:osborn_book/pdf/service/download_service.dart';
 import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:osborn_book/pdf/models/base_response_model.dart';
 import 'package:osborn_book/pdf/models/bookmarks.dart';
@@ -554,24 +555,23 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   // Function to save the cached PDF to the application's document directory.
   Future<void> savePdfToDocuments() async {
     try {
-      Directory appDocDir = await getApplicationDocumentsDirectory();
-      String appFilePath = '${appDocDir.path}/${widget.title}.pdf';
-
-      // Copy the cached PDF file to the application's document directory.
-      File cachedPdf = File(pdfPath);
-      await cachedPdf.copy(appFilePath);
-
-      Get.showSnackbar(
-        const GetSnackBar(
-          duration: Duration(seconds: 1),
-          message: 'PDF downloaded to app\'s storage!',
-        ),
+      // Use DownloadService to properly save the PDF with metadata for Hive storage
+      final success = await DownloadService.downloadPdf(
+        urlId: widget.urlId,
+        title: widget.title,
+        pdfUrl: widget.urlToPdf,
+        coverUrl: widget.imagePath,
       );
 
-      setState(() {
-        isDownloaded = true;
-      });
+      if (success) {
+        setState(() {
+          isDownloaded = true;
+        });
+      } else {
+        showErrorDialog('Failed to download PDF. Please try again.');
+      }
     } catch (e) {
+      log('Error downloading PDF: $e');
       showErrorDialog(e.toString());
     }
   }

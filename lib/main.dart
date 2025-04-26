@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:osborn_book/connectivity/internet_controller.dart';
 import 'package:osborn_book/home/home_page.dart';
 import 'package:osborn_book/onboarding/onboarding_page.dart';
 import 'package:osborn_book/pdf/app_state.dart';
 import 'package:osborn_book/pdf/pdf_viewer_screen.dart';
+import 'package:osborn_book/pdf/service/hive_service.dart';
 import 'package:osborn_book/publication_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,9 +14,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Hive for local storage
+  await HiveService.init();
+  
   bool isLoggedIn = await _checkAuthStatus();
   String? deviceToken = await getDeviceToken();
   Get.put(InternetController(),permanent: true);
+  
+  // Validate that stored PDFs actually exist in file system
+  await HiveService.validatePdfFiles();
+  
   runApp(
       MultiProvider(
         providers: [
