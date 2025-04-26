@@ -1,17 +1,17 @@
 // mark_model.dart
 class Mark {
-  final String id;
+  final String? id;
   final String publicationReaderId;
   final int page;
-  final double x;
-  final double y;
+  final double? x;
+  final double? y;
 
   Mark({
-    required this.id,
+    this.id,
     required this.publicationReaderId,
     required this.page,
-    required this.x,
-    required this.y,
+    this.x,
+    this.y,
   });
 
   // Factory constructor to create a Mark from JSON (response)

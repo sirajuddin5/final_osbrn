@@ -1,4 +1,6 @@
 // adjust based on your project structure
+import 'dart:developer';
+
 import 'package:osborn_book/pdf/models/base_response_model.dart';
 
 import '../models/notes.dart';
@@ -14,6 +16,7 @@ class NoteService {
       ApiConstants.notesEndpoint,
       note.toJson(),
     );
+    log("Response from createNote: $response");
     return BaseResponseModel<Note>.fromJson(response);
   }
 
@@ -22,7 +25,7 @@ class NoteService {
     final response = await _apiService.get(
       '${ApiConstants.notesEndpoint}?publication_id=$publicationId',
     );
-
+    log("Response from getNotes: $response");
     return BaseResponseModel<List<Note>>.fromJson(response);
   }
 
@@ -32,6 +35,7 @@ class NoteService {
       '${ApiConstants.notesEndpoint}/$id',
       note.toJson(),
     );
+    log("Response from updateNote: $response");
     return BaseResponseModel<Note>.fromJson(response);
   }
 
@@ -40,9 +44,8 @@ class NoteService {
     final response = await _apiService.delete(
       '${ApiConstants.notesEndpoint}/$id',
     );
+    log("Response from deleteNote: $response");
     // Optionally handle the response if you need confirmation or data
-    if (response['status'] != 'success') {
-      throw Exception('Failed to delete note');
-    }
+    
   }
 }

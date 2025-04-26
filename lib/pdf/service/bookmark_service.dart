@@ -30,7 +30,7 @@ class BookmarkService {
     final response =
         await _apiService.delete('${ApiConstants.bookmarksEndpoint}/$id');
     // Optionally handle the response if you need confirmation or data
-    if (response['status'] != 'success') {
+    if (response['status'] != 'true') {
       throw Exception('Failed to delete bookmark');
     }
   }
