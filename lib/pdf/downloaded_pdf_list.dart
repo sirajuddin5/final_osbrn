@@ -203,7 +203,7 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
     if (displayTitle.length > 25) {
       displayTitle = displayTitle.substring(0, 22) + '...';
     }
-    
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -221,7 +221,7 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
       child: Card(
         elevation: 4.0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(0),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -230,8 +230,8 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12.0),
-                  topRight: Radius.circular(12.0),
+                  topLeft: Radius.circular(0),
+                  topRight: Radius.circular(0),
                 ),
                 child: pdf.coverImagePath.isNotEmpty
                     ? Image.file(
@@ -317,7 +317,7 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
         if (await file.exists()) {
           await file.delete();
         }
-        
+
         // If cover image exists, delete it too
         if (pdf.coverImagePath.isNotEmpty) {
           final coverFile = File(pdf.coverImagePath);
@@ -325,10 +325,10 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
             await coverFile.delete();
           }
         }
-        
+
         // Remove from Hive database
         await HiveService.deletePdf(pdf.urlId);
-        
+
         // Refresh the list
         setState(() {});
       } catch (e) {
@@ -347,7 +347,8 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
       builder: (context) {
         return AlertDialog(
           title: const Text('Delete PDF'),
-          content: const Text('Are you sure you want to delete this PDF and all its annotations?'),
+          content: const Text(
+              'Are you sure you want to delete this PDF and all its annotations?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false), // Return false

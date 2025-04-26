@@ -9,7 +9,7 @@ import 'api_service.dart';
 import '../constants.dart';
 
 class NoteService {
-  final ApiServiceNetwork _apiService = ApiServiceNetwork();
+  final ApiService _apiService = ApiService();
 
   // Create a new Note (POST)
   Future<BaseResponseModel<Note>> createNote(Note note) async {
@@ -17,21 +17,22 @@ class NoteService {
       ApiConstants.notesEndpoint,
       note.toJson(),
     );
-    
+
     // Simultaneously save to local storage
-    BaseResponseModel<Note> responseModel = BaseResponseModel<Note>.fromJson(response);
+    BaseResponseModel<Note> responseModel =
+        BaseResponseModel<Note>.fromJson(response);
     if (responseModel.status == true && responseModel.data != null) {
       try {
         // Create LocalNote from returned note
         final localNote = LocalNote.fromNote(responseModel.data!);
-        
+
         // Save to Hive
         await HiveService.saveNote(note.publicationId, localNote);
       } catch (e) {
         log("Error saving note locally: $e");
       }
     }
-    
+
     return responseModel;
   }
 
@@ -50,21 +51,22 @@ class NoteService {
       '${ApiConstants.notesEndpoint}/$id',
       note.toJson(),
     );
-    
+
     // Simultaneously update in local storage
-    BaseResponseModel<Note> responseModel = BaseResponseModel<Note>.fromJson(response);
+    BaseResponseModel<Note> responseModel =
+        BaseResponseModel<Note>.fromJson(response);
     if (responseModel.status == true && responseModel.data != null) {
       try {
         // Create LocalNote from returned note
         final localNote = LocalNote.fromNote(responseModel.data!);
-        
+
         // Save to Hive
         await HiveService.saveNote(note.publicationId, localNote);
       } catch (e) {
         log("Error updating note locally: $e");
       }
     }
-    
+
     return responseModel;
   }
 
@@ -73,7 +75,7 @@ class NoteService {
     final response = await _apiService.delete(
       '${ApiConstants.notesEndpoint}/$id',
     );
-    
+
     // Also delete from local storage if server delete was successful
     try {
       await HiveService.deleteNote(publicationId, id);

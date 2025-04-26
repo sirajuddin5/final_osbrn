@@ -360,7 +360,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePgeState extends State<HomePage> {
-  late Future<List<Publication>>? futurePublications;
+  late Future<List<Publication>?> futurePublications;
 
   // Method to reload publications
   Future<void> _reloadPublications() async {
@@ -369,12 +369,11 @@ class _HomePgeState extends State<HomePage> {
     });
   }
 
-
   @override
   void initState() {
     super.initState();
     print(widget.deviceToken);
-    futurePublications = fetchPublications(widget.deviceToken,context);
+    futurePublications = fetchPublications(widget.deviceToken, context);
     // print(futurePublications);
   }
 
@@ -403,11 +402,11 @@ class _HomePgeState extends State<HomePage> {
           backgroundColor: Colors.deepPurple,
         ),
         drawer: CustomDrawer(),
-
-        body:AllBooksWidget(futurePublications:  fetchPublications(widget.deviceToken,context), onReload:_reloadPublications,),
+        body: AllBooksWidget(
+          futurePublications: fetchPublications(widget.deviceToken, context),
+          onReload: _reloadPublications,
+        ),
       ),
     );
   }
 }
-
-

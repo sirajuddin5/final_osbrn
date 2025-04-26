@@ -146,19 +146,11 @@
 // }
 
 import 'package:flutter/material.dart';
-import 'package:osborn_book/main.dart';
-import 'package:osborn_book/pdf/downloaded_pdf_list.dart';
 import 'package:osborn_book/widgets/all_books.dart';
-import 'package:osborn_book/widgets/book_card.dart';
 
 import 'networking/fetch_response.dart';
 import 'networking/publication_model.dart';
-
-import 'package:flutter/material.dart';
-
-import 'networking/fetch_response.dart';
-import 'networking/publication_model.dart';
-// Ensure this import is correct
+// Removed duplicate and unused imports
 
 class PublicationsScreen extends StatefulWidget {
   final String deviceToken;
@@ -168,7 +160,7 @@ class PublicationsScreen extends StatefulWidget {
 }
 
 class _PublicationsScreenState extends State<PublicationsScreen> {
-  late Future<List<Publication>> futurePublications;
+  late Future<List<Publication>?> futurePublications;
 
   Future<void> _reloadPublications() async {
     setState(() {

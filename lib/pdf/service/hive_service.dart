@@ -8,33 +8,38 @@ import 'package:osborn_book/pdf/models/local_highlight.dart';
 import 'package:osborn_book/pdf/models/local_note.dart';
 import 'package:osborn_book/pdf/models/notes.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
+import 'package:uuid/v4.dart';
 
 class HiveService {
   static const String _pdfBox = 'downloaded_pdfs';
   static const String _highlightsBox = 'pdf_highlights';
   static const String _notesBox = 'pdf_notes';
   static const String _bookmarksBox = 'pdf_bookmarks';
+  static const String _configs = 'configs';
 
   // Initialize Hive
   static Future<void> init() async {
     await Hive.initFlutter();
-    
+
     // Register adapters
     Hive.registerAdapter(DownloadedPdfAdapter());
     Hive.registerAdapter(LocalHighlightAdapter());
     Hive.registerAdapter(PdfTextLineLocalAdapter());
     Hive.registerAdapter(LocalNoteAdapter());
     Hive.registerAdapter(LocalBookmarkAdapter());
-    
+
     // Open boxes
     await Hive.openBox<DownloadedPdf>(_pdfBox);
     await Hive.openBox<LocalHighlight>(_highlightsBox);
     await Hive.openBox<LocalNote>(_notesBox);
     await Hive.openBox<LocalBookmark>(_bookmarksBox);
+    await Hive.openBox(_configs);
   }
 
   // PDF Methods
   static Future<void> savePdf(DownloadedPdf pdf) async {
+    pdf.urlId = const Uuid().v4();
     final box = Hive.box<DownloadedPdf>(_pdfBox);
     await box.put(pdf.urlId, pdf);
   }
@@ -42,7 +47,7 @@ class HiveService {
   static Future<void> deletePdf(String urlId) async {
     final box = Hive.box<DownloadedPdf>(_pdfBox);
     await box.delete(urlId);
-    
+
     // Delete associated highlights, notes, and bookmarks
     await deleteAllHighlightsForPdf(urlId);
     await deleteAllNotesForPdf(urlId);
@@ -68,7 +73,7 @@ class HiveService {
   static Future<void> validatePdfFiles() async {
     final box = Hive.box<DownloadedPdf>(_pdfBox);
     final pdfs = box.values.toList();
-    
+
     for (var pdf in pdfs) {
       final file = File(pdf.localPath);
       if (!await file.exists()) {
@@ -78,7 +83,9 @@ class HiveService {
   }
 
   // Highlight Methods
-  static Future<void> saveHighlight(String pdfId, LocalHighlight highlight) async {
+  static Future<void> saveHighlight(
+      String pdfId, LocalHighlight highlight) async {
+    highlight.id = const Uuid().v4();
     final box = Hive.box<LocalHighlight>(_highlightsBox);
     final key = '${pdfId}_${highlight.id}';
     await box.put(key, highlight);
@@ -102,7 +109,7 @@ class HiveService {
     final keysToDelete = box.keys
         .where((key) => key.toString().startsWith('${pdfId}_'))
         .toList();
-    
+
     for (var key in keysToDelete) {
       await box.delete(key);
     }
@@ -110,6 +117,7 @@ class HiveService {
 
   // Note Methods
   static Future<void> saveNote(String pdfId, LocalNote note) async {
+    note.id = const Uuid().v4();
     final box = Hive.box<LocalNote>(_notesBox);
     final key = '${pdfId}_${note.id}';
     await box.put(key, note);
@@ -123,9 +131,7 @@ class HiveService {
 
   static List<LocalNote> getNotesForPdf(String pdfId) {
     final box = Hive.box<LocalNote>(_notesBox);
-    return box.values
-        .where((note) => note.publicationId == pdfId)
-        .toList();
+    return box.values.where((note) => note.publicationId == pdfId).toList();
   }
 
   static Future<void> deleteAllNotesForPdf(String pdfId) async {
@@ -133,7 +139,7 @@ class HiveService {
     final keysToDelete = box.keys
         .where((key) => key.toString().startsWith('${pdfId}_'))
         .toList();
-    
+
     for (var key in keysToDelete) {
       await box.delete(key);
     }
@@ -141,6 +147,7 @@ class HiveService {
 
   // Bookmark Methods
   static Future<void> saveBookmark(String pdfId, LocalBookmark bookmark) async {
+    bookmark.id = const Uuid().v4();
     final box = Hive.box<LocalBookmark>(_bookmarksBox);
     final key = '${pdfId}_${bookmark.id ?? bookmark.page.toString()}';
     await box.put(key, bookmark);
@@ -164,7 +171,7 @@ class HiveService {
     final keysToDelete = box.keys
         .where((key) => key.toString().startsWith('${pdfId}_'))
         .toList();
-    
+
     for (var key in keysToDelete) {
       await box.delete(key);
     }
@@ -178,26 +185,41 @@ class HiveService {
       if (!await imageDir.exists()) {
         await imageDir.create(recursive: true);
       }
-      
+
       final fileName = '$urlId.jpg';
       final localPath = '${imageDir.path}/$fileName';
       final file = File(localPath);
-      
+
       // If the file already exists, return its path
       if (await file.exists()) {
         return localPath;
       }
-      
+
       // Otherwise, download the image
       final response = await HttpClient().getUrl(Uri.parse(imageUrl));
       final httpResponse = await response.close();
       final bytes = await httpResponse.expand((chunk) => chunk).toList();
       await file.writeAsBytes(bytes);
-      
+
       return localPath;
     } catch (e) {
       print('Error saving cover image: $e');
       return '';
     }
+  }
+
+  static Future<void> saveDeviceToken(String token) async {
+    final box = Hive.box(_configs);
+    await box.put('device_token', token);
+  }
+
+  static String? getDeviceToken() {
+    final box = Hive.box(_configs);
+    return box.get('device_token');
+  }
+
+  static Future<void> deleteDeviceToken() async {
+    final box = Hive.box(_configs);
+    await box.delete('device_token');
   }
 }

@@ -24,27 +24,25 @@ class InternetController extends GetxController {
 
     if (cr == ConnectivityResult.none) {
       print("No internet connection detected.");
-      Get.rawSnackbar(
-        titleText: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(Get.context!).size.height *0.05,
-          ),
-          width: double.infinity,
-          child: const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "No internet Connection ",
-                style: TextStyle(fontSize: 25, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
-        messageText: SizedBox(),
-        backgroundColor: Colors.black87,
-        isDismissible: false,
-        duration: Duration(days: 1),
-      );
+      
+      // Check if we're already on the downloaded PDFs page to avoid navigation loops
+      final String? currentRoute = Get.currentRoute;
+      if (currentRoute != null && !currentRoute.contains('/downloaded_pdfs')) {
+        // Navigate to downloaded PDFs page if not already there
+        print("Navigating to downloaded PDFs page due to no internet.");
+        Get.toNamed('/downloaded_pdfs');
+        
+        // Show a temporary message explaining the navigation
+        Get.snackbar(
+          'No Internet Connection',
+          'Redirecting to your downloaded PDFs',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: Duration(seconds: 2),
+        );
+      }
+      
     } else {
       print("Internet connection is available.");
       if (Get.isSnackbarOpen) {

@@ -3,7 +3,7 @@ import 'api_service.dart';
 import '../constants.dart';
 
 class MarkService {
-  final ApiServiceNetwork _apiService = ApiServiceNetwork();
+  final ApiService _apiService = ApiService();
 
   // Create a new Mark (POST)
   Future<Mark> createMark(Mark mark) async {

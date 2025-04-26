@@ -21,7 +21,6 @@ import '../HighLightsPage.dart';
 import 'app_state.dart';
 import 'bookmark_page.dart';
 import 'grid_page.dart';
-import 'highlights_page.dart';
 import 'models/highlights.dart';
 import 'notes_page.dart';
 
@@ -436,6 +435,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               try {
                 final BaseResponseModel<Note>? res;
                 if (_note != null) {
+                  _note!.text = noteController.text;
                   res = await noteService.createNote(
                     _note!,
                   );

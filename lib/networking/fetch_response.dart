@@ -162,7 +162,7 @@ import 'package:osborn_book/networking/publication_model.dart';
 
 import '../pdf/downloaded_pdf_list.dart';
 
-Future<List<Publication>> fetchPublications(String token, BuildContext context) async {
+Future<List<Publication>?> fetchPublications(String token, BuildContext context) async {
   print("fetch publication being called");
 
   final url = 'https://www.osbornebooks.co.uk/api/publications';
@@ -188,13 +188,13 @@ Future<List<Publication>> fetchPublications(String token, BuildContext context) 
           .map((json) => Publication.fromJson(json as Map<String, dynamic>))
           .toList();
     } else {
-      print("Error: ${response.body}"); // Print the error response for debugging
+      log("Error: ${response.body}"); // Print the error response for debugging
       throw Exception('Failed to load publications: ${response.reasonPhrase}');
     }
-  } on SocketException catch (e) {
-    print('Network error: $e');
+  } catch (e) {
+    log('Network error: $e');
 
-    throw Exception('No internet connection');
+    // throw Exception('No internet connection');
     // Show the no internet dialog
     // showDialog(
     //   context: context,
@@ -206,9 +206,6 @@ Future<List<Publication>> fetchPublications(String token, BuildContext context) 
     //   },
     // );
     // return []; // Return an empty list on error
-  } catch (e) {
-    print("Error occurred: $e"); // Print the actual error
-    throw Exception('Failed to load publications: $e');
   }
 }
 

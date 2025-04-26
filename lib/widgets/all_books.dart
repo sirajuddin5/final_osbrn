@@ -13,7 +13,7 @@ class AllBooksWidget extends StatefulWidget {
     required this.onReload,
   });
 
-  final Future<List<Publication>> futurePublications;
+  final Future<List<Publication>?> futurePublications;
   final VoidCallback onReload;
 
   @override
@@ -48,7 +48,7 @@ class _AllBooksWidgetState extends State<AllBooksWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Publication>>(
+    return  FutureBuilder(
       future: widget.futurePublications,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

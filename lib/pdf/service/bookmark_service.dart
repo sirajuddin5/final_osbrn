@@ -8,15 +8,16 @@ import '../models/bookmarks.dart';
 import 'api_service.dart';
 
 class BookmarkService {
-  final ApiServiceNetwork _apiService = ApiServiceNetwork();
+  final ApiService _apiService = ApiService();
 
   // Create a new Bookmark (POST)
   Future<BaseResponseModel<Bookmark>> createBookmark(Bookmark bookmark) async {
     final response = await _apiService.post(
         ApiConstants.bookmarksEndpoint, bookmark.toJson());
-    
+
     // Simultaneously save to local storage
-    BaseResponseModel<Bookmark> responseModel = BaseResponseModel<Bookmark>.fromJson(response);
+    BaseResponseModel<Bookmark> responseModel =
+        BaseResponseModel<Bookmark>.fromJson(response);
     if (responseModel.status == true && responseModel.data != null) {
       try {
         // Create LocalBookmark from returned bookmark
@@ -26,14 +27,14 @@ class BookmarkService {
           page: bookmark.page,
           createdAt: DateTime.now().toString(),
         );
-        
+
         // Save to Hive
         await HiveService.saveBookmark(bookmark.publicationId, localBookmark);
       } catch (e) {
         log("Error saving bookmark locally: $e");
       }
     }
-    
+
     return responseModel;
   }
 
@@ -52,7 +53,7 @@ class BookmarkService {
   Future<void> deleteBookmark(String id, String publicationId) async {
     final response =
         await _apiService.delete('${ApiConstants.bookmarksEndpoint}/$id');
-    
+
     // Also delete from local storage if server delete was successful
     try {
       await HiveService.deleteBookmark(publicationId, id);

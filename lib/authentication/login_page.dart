@@ -166,7 +166,10 @@
 //   }
 // }
 
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:osborn_book/pdf/service/hive_service.dart';
 
 import '../colors/colors.dart';
 import '../home/home_page.dart';
@@ -191,6 +194,12 @@ class _LoginPageState extends State<LoginPage> {
   late String deviceToken;
 
   @override
+  void initState() {
+
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
@@ -205,7 +214,6 @@ class _LoginPageState extends State<LoginPage> {
               end: Alignment.bottomCenter,
             ),
           ),
-
           child: Center(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -294,21 +302,22 @@ class _LoginPageState extends State<LoginPage> {
                             print(response?.deviceToken);
                             print(response?.error);
 
-
                             setState(() {
                               showSpinner = false;
                             });
 
                             if (response?.deviceToken != null) {
+                              log("Saving device token to local Storage\n${response?.deviceToken}");
+                              await HiveService.saveDeviceToken(
+                                  response!.deviceToken);
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => HomePage(
                                     deviceToken: response!.deviceToken,
                                   ),
-
                                 ),
-                                    (Route<dynamic> route) => false,
+                                (Route<dynamic> route) => false,
                               );
                             } else {
                               // Show the error dialog

@@ -6,7 +6,6 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:osborn_book/HighLightsPage.dart';
 import 'package:osborn_book/pdf/bookmark_page.dart';
 import 'package:osborn_book/pdf/grid_page.dart';
-import 'package:osborn_book/pdf/highlights_page.dart';
 import 'package:osborn_book/pdf/models/bookmarks.dart';
 import 'package:osborn_book/pdf/models/downloaded_pdf.dart';
 import 'package:osborn_book/pdf/models/highlights.dart';
@@ -29,7 +28,8 @@ class DownloadedPdfViewerPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<DownloadedPdfViewerPage> createState() => _DownloadedPdfViewerPageState();
+  State<DownloadedPdfViewerPage> createState() =>
+      _DownloadedPdfViewerPageState();
 }
 
 class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
@@ -47,27 +47,28 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
   Note? _selectedNote;
   Note? _note;
   List<Note> _notes = [];
-  
+
   // For internet connection checking
-  bool hasInternetConnection = false;
+  // bool hasInternetConnection = false;
 
   @override
   void initState() {
     super.initState();
     // Load annotations from local storage on init
-    _checkInternetConnection();
+    // _checkInternetConnection();
     _loadHighlightsFromStorage();
     _loadNotesFromStorage();
   }
 
   // Check for internet connection
-  Future<void> _checkInternetConnection() async {
-    hasInternetConnection = await InternetConnectionChecker().hasConnection;
-  }
+  // Future<void> _checkInternetConnection() async {
+  //   hasInternetConnection = await InternetConnectionChecker().hasConnection;
+  // }
 
   // Load highlights from Hive storage
   Future<void> _loadHighlightsFromStorage() async {
-    final localHighlights = HiveService.getHighlightsForPdf(widget.pdfData.urlId);
+    final localHighlights =
+        HiveService.getHighlightsForPdf(widget.pdfData.urlId);
     for (var highlight in localHighlights) {
       setState(() {
         // Convert LocalHighlight to a format that can be used by the PDF viewer
@@ -81,7 +82,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
             ),
           );
         }
-        
+
         // Add highlight to the viewer when it's loaded
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_pdfViewerController.annotationMode != null) {
@@ -100,7 +101,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
     setState(() {
       _notes = localNotes.map((localNote) => localNote.toNote()).toList();
     });
-    
+
     // Add notes to the viewer when it's loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_pdfViewerController.annotationMode != null) {
@@ -140,14 +141,17 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
     final selectedPage = await Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) =>
-              BookmarksPage(pdfController: _pdfViewerController, urldId: widget.pdfData.urlId)),
+          builder: (context) => BookmarksPage(
+                pdfController: _pdfViewerController,
+                urldId: widget.pdfData.urlId,
+                isLocal: true,
+              )),
     );
     if (selectedPage != null) {
       _pdfViewerController.jumpToPage(selectedPage);
     }
   }
-  
+
   void _showHighlights() async {
     final result = await Navigator.push(
       context,
@@ -155,6 +159,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
         builder: (context) => HighlightsPage(
           pdfViewerController: _pdfViewerController,
           urlId: widget.pdfData.urlId,
+          isLocal: true,
         ),
       ),
     );
@@ -170,7 +175,10 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
       context,
       MaterialPageRoute(
           builder: (context) => NotesPage(
-              urlId: widget.pdfData.urlId, pdfViewerController: _pdfViewerController)),
+                urlId: widget.pdfData.urlId,
+                pdfViewerController: _pdfViewerController,
+                isLocal: true,
+              )),
     );
     if (selectedPage != null) {
       _pdfViewerController.jumpToPage(selectedPage);
@@ -193,9 +201,10 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
               try {
                 if (_note != null) {
                   // Save note locally first
+                  _note!.text = noteController.text;
                   final localNote = LocalNote.fromNote(_note!);
                   await HiveService.saveNote(widget.pdfData.urlId, localNote);
-                  
+
                   // Add annotation to viewer
                   _pdfViewerController.addAnnotation(StickyNoteAnnotation(
                     pageNumber: pageNumber,
@@ -206,15 +215,16 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                     ),
                     icon: PdfStickyNoteIcon.note,
                   ));
-                  
+
                   // Add to notes list
                   _notes.add(_note!);
-                  
+
                   // Upload to server if connected
-                  if (hasInternetConnection) {
-                    await DownloadService.syncLocalAnnotationsToServer(widget.pdfData.urlId);
-                  }
-                  
+                  // if (hasInternetConnection) {
+                  //   await DownloadService.syncLocalAnnotationsToServer(
+                  //       widget.pdfData.urlId);
+                  // }
+
                   Navigator.of(context).pop();
                 }
               } catch (e) {
@@ -239,7 +249,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
               controller: _pdfViewerController,
               key: _pdfViewerKey,
               pageLayoutMode: PdfPageLayoutMode.single,
-              
+
               onAnnotationSelected: (annotation) {
                 if (annotation is StickyNoteAnnotation) {
                   _selectedNote = _notes.firstWhere((note) {
@@ -252,7 +262,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                   });
                 }
               },
-              
+
               onAnnotationEdited: (annotation) async {
                 if (annotation is StickyNoteAnnotation) {
                   final note = Note(
@@ -264,28 +274,30 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                     color: Colors.yellow.value.toString(),
                     text: annotation.text,
                   );
-                  
+
                   try {
                     // Update local note first
                     final localNote = LocalNote.fromNote(note);
                     await HiveService.saveNote(widget.pdfData.urlId, localNote);
-                    
+
                     // Update in notes list
-                    int index = _notes.indexWhere((n) => n.id == _selectedNote?.id);
+                    int index =
+                        _notes.indexWhere((n) => n.id == _selectedNote?.id);
                     if (index != -1) {
                       _notes[index] = note;
                     }
-                    
+
                     // Upload to server if connected
-                    if (hasInternetConnection) {
-                      await DownloadService.syncLocalAnnotationsToServer(widget.pdfData.urlId);
-                    }
+                    // if (hasInternetConnection) {
+                    //   await DownloadService.syncLocalAnnotationsToServer(
+                    //       widget.pdfData.urlId);
+                    // }
                   } catch (e) {
                     log("Error updating note: $e");
                   }
                 }
               },
-              
+
               // When document is loaded, annotations are already loaded in initState
               onDocumentLoaded: (details) async {
                 // We can ensure annotations are properly shown after document is loaded
@@ -311,22 +323,21 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                             pageNumber: line['pageNumber'] as int,
                           ));
                         }
-                        
+
                         final localHighlight = LocalHighlight(
                           id: DateTime.now().millisecondsSinceEpoch.toString(),
                           publicationReaderId: widget.pdfData.urlId,
                           pdfTextLines: textLines,
                         );
-                        
+
                         await HiveService.saveHighlight(
-                          widget.pdfData.urlId, 
-                          localHighlight
-                        );
-                        
+                            widget.pdfData.urlId, localHighlight);
+
                         // Upload to server if connected
-                        if (hasInternetConnection) {
-                          await DownloadService.syncLocalAnnotationsToServer(widget.pdfData.urlId);
-                        }
+                        // if (hasInternetConnection) {
+                        //   await DownloadService.syncLocalAnnotationsToServer(
+                        //       widget.pdfData.urlId);
+                        // }
                       }
                     } catch (e) {
                       log("Error creating highlight: $e");
@@ -341,7 +352,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                     details.selectedText!.isNotEmpty) {
                   setState(() {
                     _selectionDetails = details;
-                    
+
                     List<PdfTextLine>? pdfTextLines =
                         _pdfViewerKey.currentState?.getSelectedTextLines();
 
@@ -428,15 +439,22 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                       );
                     },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.highlight),
-                    onPressed: () {
-                      final annotation = HighlightAnnotation(
-                        textBoundsCollection: _pdfViewerKey.currentState?.getSelectedTextLines() ?? [],
-                      );
-                      _pdfViewerController.addAnnotation(annotation);
-                    },
-                  ),
+                  // IconButton(
+                  //   icon: const Icon(Icons.highlight),
+                  //   onPressed: () {
+                  //     final annotation = HighlightAnnotation(
+                  //       textBoundsCollection: _pdfViewerKey.currentState
+                  //               ?.getSelectedTextLines() ??
+                  //           [],
+                  //     );
+                  //     // S
+                  //     HiveService.saveHighlight(
+                  //       widget.pdfData.urlId,
+                  //       LocalHighlight(publicationReaderId: , pdfTextLines: )
+                  //     );
+                  //     _pdfViewerController.addAnnotation(annotation);
+                  //   },
+                  // ),
                 ],
               ),
             ),
@@ -526,8 +544,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.grid_view,
-                  color: Colors.white, size: 28),
+              icon: const Icon(Icons.grid_view, color: Colors.white, size: 28),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -569,13 +586,15 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
                 try {
                   // Save bookmark locally first
                   final localBookmark = LocalBookmark.fromBookmark(bookmark);
-                  await HiveService.saveBookmark(widget.pdfData.urlId, localBookmark);
-                  
+                  await HiveService.saveBookmark(
+                      widget.pdfData.urlId, localBookmark);
+
                   // Upload to server if connected
-                  if (hasInternetConnection) {
-                    await DownloadService.syncLocalAnnotationsToServer(widget.pdfData.urlId);
-                  }
-                  
+                  // if (hasInternetConnection) {
+                  //   await DownloadService.syncLocalAnnotationsToServer(
+                  //       widget.pdfData.urlId);
+                  // }
+
                   Get.showSnackbar(
                     GetSnackBar(
                         duration: const Duration(seconds: 1),

@@ -12,7 +12,7 @@ import '../constants.dart';
 import 'package:http/http.dart' as http;
 
 class HighlightService {
-  final ApiServiceNetwork _apiService = ApiServiceNetwork();
+  final ApiService _apiService = ApiService();
 
   // Create a new Highlight (POST)
   Future<BaseResponseModel<Highlight>> createHighlight(
@@ -21,11 +21,12 @@ class HighlightService {
       ApiConstants.highlightsEndpoint,
       highlight.toJson(),
     );
-    print("========create highlight =========");
-    print(response);
-    
+    log("========create highlight =========");
+    log(response.toString());
+
     // Simultaneously save to local storage
-    BaseResponseModel<Highlight> responseModel = BaseResponseModel<Highlight>.fromJson(response);
+    BaseResponseModel<Highlight> responseModel =
+        BaseResponseModel<Highlight>.fromJson(response);
     if (responseModel.status == true && responseModel.data != null) {
       try {
         // Create PdfTextLineLocal objects from the highlight text lines
@@ -40,21 +41,22 @@ class HighlightService {
             pageNumber: line['pageNumber'] as int,
           ));
         }
-        
+
         // Create LocalHighlight object
         final localHighlight = LocalHighlight(
           id: responseModel.data!.id,
           publicationReaderId: highlight.publicationReaderId,
           pdfTextLines: textLines,
         );
-        
+
         // Save to Hive
-        await HiveService.saveHighlight(highlight.publicationReaderId, localHighlight);
+        await HiveService.saveHighlight(
+            highlight.publicationReaderId, localHighlight);
       } catch (e) {
         log("Error saving highlight locally: $e");
       }
     }
-    
+
     return responseModel;
   }
 
@@ -64,7 +66,8 @@ class HighlightService {
     final response = await _apiService.get(
       '${ApiConstants.highlightsEndpoint}/$publicationId',
     );
-
+    log("========get highlights =========");
+    log(response.toString());
     return BaseResponseModel<List<Highlight>>.fromJson(response);
   }
 
