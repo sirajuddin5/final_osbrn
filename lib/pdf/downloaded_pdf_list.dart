@@ -150,18 +150,18 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Downloaded PDFs'),
+        title: const Text('Downloaded PDFs'),
         backgroundColor: Colors.deepPurple,
       ),
       body: FutureBuilder<List<FileSystemEntity>>(
         future: _getDownloadedPdfs(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return const Center(child: Text('Something went wrong'));
           } else if (snapshot.data == null || snapshot.data!.isEmpty) {
-            return Center(child: Text('No downloaded PDFs found.'));
+            return const Center(child: Text('No downloaded PDFs found.'));
           }
 
           // List of downloaded PDFs
@@ -174,7 +174,7 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
               return ListTile(
                 title: Text(file.path.split('/').last), // Extract file name
                 trailing: IconButton(
-                  icon: Icon(Icons.delete, ),
+                  icon: const Icon(Icons.delete, ),
                   onPressed: () async {
                     // Show confirmation dialog before deletion
                     bool confirm = await _showDeleteConfirmationDialog(context);
@@ -220,16 +220,16 @@ class _DownloadedPdfsPageState extends State<DownloadedPdfsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Delete PDF'),
-          content: Text('Are you sure you want to delete this PDF?'),
+          title: const Text('Delete PDF'),
+          content: const Text('Are you sure you want to delete this PDF?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false), // Return false
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true), // Return true
-              child: Text('Delete'),
+              child: const Text('Delete'),
             ),
           ],
         );

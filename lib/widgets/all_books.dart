@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 
 import '../networking/publication_model.dart';
@@ -46,51 +48,51 @@ class _AllBooksWidgetState extends State<AllBooksWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: FutureBuilder<List<Publication>>(
-        future: widget.futurePublications,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else
-          if (snapshot.error.toString().contains('No internet connection')) {
-            // Show the no internet dialog
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              showDialog(
-                context: context,
-                builder: (context) => noInternetDialog(context),
-              );
-            });
-            return Center(child: Text("Loading...")); // Indicate loading while showing dialog
-          }
-            else if (snapshot.hasData) {
-            // Changed ListView.builder to GridView.builder
-            return GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // Number of columns
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
-              ),
-              itemCount: snapshot.data?.length ?? 0,
-              itemBuilder: (context, index) {
-                final publication = snapshot.data![index];
-                print("------------------------------");
-                print(publication.title);
-                // Use BookCard instead of ListTile
-                return BookCard(
-                  title: publication.title,
-                  imagePath: publication.coverUrl,
-                  url: publication.pathUrl,
-                  urlToPdf: publication.urlToPdf,
-                  publicationId: publication.urlId,
-                  // Changed to use coverUrl for imagePath
-                );
-              },
+    return FutureBuilder<List<Publication>>(
+      future: widget.futurePublications,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.error
+            .toString()
+            .contains('No internet connection')) {
+          // Show the no internet dialog
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            showDialog(
+              context: context,
+              builder: (context) => noInternetDialog(context),
             );
-          }
-          return Center(child: Text("No data available"));
-        },
-      ),
+          });
+          return const Center(
+              child:
+                  Text("Loading...")); // Indicate loading while showing dialog
+        } else if (snapshot.hasData) {
+          // Changed ListView.builder to GridView.builder
+          return GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // Number of columns
+              crossAxisSpacing: 8.0,
+              mainAxisSpacing: 8.0,
+            ),
+            itemCount: snapshot.data?.length ?? 0,
+            itemBuilder: (context, index) {
+              final publication = snapshot.data![index];
+              log("------------------------------");
+              log(publication.title);
+              // Use BookCard instead of ListTile
+              return BookCard(
+                title: publication.title,
+                imagePath: publication.coverUrl,
+                url: publication.pathUrl,
+                urlToPdf: publication.urlToPdf,
+                publicationId: publication.urlId,
+                // Changed to use coverUrl for imagePath
+              );
+            },
+          );
+        }
+        return const Center(child: Text("No data available"));
+      },
     );
   }
 }

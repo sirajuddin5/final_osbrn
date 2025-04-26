@@ -365,7 +365,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.note_add),
+                    icon: const Icon(Icons.note_add),
                     onPressed: () {
                       log("[Note Specifications] Adding Note for Text: ${_selectionDetails!.selectedText}");
 
