@@ -7,8 +7,8 @@ import 'package:osborn_book/pdf/models/notes.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class PdfController extends GetxController {
-  RxList<Highlight> highlights = <Highlight>[].obs;
-  RxList<Note> notes = <Note>[].obs;
+  RxMap<String, RxList<Highlight>> highlightsMap = <String, RxList<Highlight>>{}.obs;
+  RxMap<String, RxList<Note>> notesMap = <String, RxList<Note>>{}.obs;
 
   RxBool isInit = false.obs;
   RxBool isDocLoaded = false.obs;
@@ -17,15 +17,19 @@ class PdfController extends GetxController {
 
   PdfController();
 
-  void init(PdfViewerController pdfViewerController, List<Highlight> highlights, List<Note> notes) {
+  void init(String urlId ,PdfViewerController pdfViewerController, List<Highlight> highlights, List<Note> notes) {
     _pdfViewerController = pdfViewerController;
-    this.highlights.addAll(highlights);
-    this.notes.addAll(notes);
-    updateAnnotations();
+    highlightsMap.clear();
+    notesMap.clear();
+    highlightsMap[urlId] = highlights.obs;
+    notesMap[urlId] = notes.obs;
+    updateAnnotations(urlId);
   }
 
-  void updateAnnotations() {
+  void updateAnnotations(String urlId) {
     log("Annotations update called");
+    final highlights = highlightsMap[urlId] ?? [];
+    final notes = notesMap[urlId] ?? [];
     for (final highlight in highlights) {
       List<PdfTextLine> list = [];
 
@@ -54,39 +58,45 @@ class PdfController extends GetxController {
     }
   }
 
-  void addNote(Note note) {
-    notes.add(note);
+  void addNote(String urlId, Note note) {
+    notesMap[urlId]?.add(note);
     _pdfViewerController?.removeAllAnnotations();
-    updateAnnotations();
+    updateAnnotations(urlId);
   }
 
-  void removeNote(Note note) {
+  void removeNote(String urlId, Note note) {
     log("Note removed: ${note.id}");
-    notes.removeWhere((n) => n.id == note.id);
+    notesMap[urlId]?.removeWhere((n) => n.id == note.id);
     _pdfViewerController?.removeAllAnnotations();
-    updateAnnotations();
+    updateAnnotations(urlId);
   }
 
-  void updateNote(Note note) {
+  void updateNote(String urlId, Note note) {
     log("Note updated: ${note.id}");
-    final index = notes.indexWhere((n) => n.id == note.id);
+    final index = notesMap[urlId]?.indexWhere((n) => n.id == note.id);
     if (index != -1) {
-      notes[index] = note;
+      if (index != null) {
+        notesMap[urlId]?[index] = note;
+      }
       _pdfViewerController?.removeAllAnnotations();
-      updateAnnotations();
+      updateAnnotations(urlId);
     }
   }
 
-  void addHighlight(Highlight highlight) {
+  void addHighlight(String urlId, Highlight highlight) {
     log("Highlight added: ${highlight.id}");
-    highlights.add(highlight);
+    highlightsMap[urlId]?.add(highlight);
   }
 
-  void removeHighlight(Highlight highlight) {
+  void removeHighlight(String urlId, Highlight highlight) {
     log("Highlight removed: ${highlight.id}");
-    highlights.removeWhere((h) => h.id == highlight.id);
+    highlightsMap[urlId]?.removeWhere((h) => h.id == highlight.id);
     _pdfViewerController?.removeAllAnnotations();
-    updateAnnotations();
+    updateAnnotations(urlId);
   }
 
+  void clearData() {
+    highlightsMap.clear();
+    notesMap.clear();
+  }
 }

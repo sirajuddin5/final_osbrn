@@ -119,7 +119,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     }
   }
 
-  updateHighlights() async {
+  void updateHighlights() async {
     try {
       final res = await highlightService.getHighlights(widget.urlId);
       log("log message ${res.toString()}");
@@ -145,7 +145,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
     }
   }
 
-  updateNotes() async {
+  void updateNotes() async {
     try {
       final noteRes = await noteService.getNotes(widget.urlId);
       if (noteRes.status ?? false) {
@@ -175,7 +175,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   Note? _note;
   List<Note> _notes = [];
 
-  final pdfController = Get.find<PdfController>();
+  final pdfController = Get.put(PdfController());
 
   Widget _buildPdfViewer() {
     return Stack(children: [
@@ -186,7 +186,8 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
               canShowPaginationDialog: false,
               onAnnotationSelected: (annotation) {
                 if (annotation is StickyNoteAnnotation) {
-                  _selectedNote = pdfController.notes.firstWhere((note) {
+                  _selectedNote =
+                      pdfController.notesMap[widget.urlId]?.firstWhere((note) {
                     if (note.page == annotation.pageNumber &&
                         note.x == annotation.position.dx &&
                         note.y == annotation.position.dy) {
@@ -217,11 +218,29 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 }
               },
               onDocumentLoaded: (details) async {
-                final highlights =
-                    await HighlightService().getHighlights(widget.urlId);
-                final notes = await NoteService().getNotes(widget.urlId);
-                pdfController.init(_pdfViewerController, highlights.data ?? [],
-                    notes.data ?? []);
+                BaseResponseModel<List<Highlight>>? highlights;
+
+                try {
+                  highlights =
+                      await HighlightService().getHighlights(widget.urlId);
+                  log("Highlights: ${highlights.data}");
+                } catch (e) {
+                  highlights = BaseResponseModel<List<Highlight>>(
+                      status: false, data: []);
+                  log("Error fetching highlights: $e");
+                }
+                BaseResponseModel<List<Note>>? notes;
+                try {
+                  notes = await NoteService().getNotes(widget.urlId);
+                  log("Notes: ${notes.data}");
+                } catch (e) {
+                  notes =
+                      BaseResponseModel<List<Note>>(status: false, data: []);
+                  log("Error fetching notes: $e");
+                }
+                pdfController.init(widget.urlId, _pdfViewerController,
+                    highlights.data ?? [], notes.data ?? []);
+                log("Fetched Notes and Highlights");
               },
               File(pdfPath),
               controller: _pdfViewerController,
@@ -250,7 +269,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                           if (res.status ?? false) {
                             _highlight = null;
                             shouldUpdateHighlight = true;
-                            pdfController.addHighlight(_highlight!);
+                            if (res.data != null) {
+                              pdfController.addHighlight(
+                                  widget.urlId, res.data!);
+                            }
                             // await updateHighlights();
                             // await updateNotes();
                             Get.showSnackbar(
@@ -433,7 +455,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   res = await noteService.createNote(
                     _note!,
                   );
-                  pdfController.addNote(_note!);
+                  if (res.data != null) {
+                    pdfController.addNote(widget.urlId, res.data!);
+                    _note = null;
+                  }
                 } else {
                   return;
                 }

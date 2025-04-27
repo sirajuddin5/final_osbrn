@@ -469,7 +469,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
 
   @override
   Widget build(BuildContext context) {
-    pdfController.init(_pdfViewerController, [], []);
+    pdfController.init(widget.pdfData.urlId ,_pdfViewerController, [], []);
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {

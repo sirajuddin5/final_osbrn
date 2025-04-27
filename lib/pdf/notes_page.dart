@@ -213,7 +213,7 @@ class _NotesPageState extends State<NotesPage> {
           NetworkList(
               pdfController: pdfController,
               noteService: noteService,
-              widget: widget),
+              widget: widget, urlId: widget.urlId),
     );
   }
 }
@@ -224,19 +224,21 @@ class NetworkList extends StatelessWidget {
     required this.pdfController,
     required this.noteService,
     required this.widget,
+    required this.urlId,
   });
 
   final PdfController pdfController;
   final NoteService noteService;
   final NotesPage widget;
+  final String urlId;
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => pdfController.notes.isNotEmpty
+    return Obx(() => (pdfController.notesMap[urlId] ?? []).isNotEmpty
         ? ListView.builder(
-            itemCount: pdfController.notes.length,
+            itemCount: (pdfController.notesMap[urlId] ?? []).length,
             itemBuilder: (context, index) {
-              final note = pdfController.notes[index];
+              final note = (pdfController.notesMap[urlId] ?? [])[index];
               return Dismissible(
                 key: Key(note.id!),
                 background: Container(
@@ -248,7 +250,7 @@ class NetworkList extends StatelessWidget {
                 direction: DismissDirection.endToStart,
                 onDismissed: (direction) async {
                   await noteService.deleteNote(note.id!, note.publicationId);
-                  pdfController.removeNote(note);
+                  pdfController.removeNote(urlId, note);
                   Get.showSnackbar(
                     const GetSnackBar(
                       message: 'Note deleted',
@@ -279,7 +281,7 @@ class NetworkList extends StatelessWidget {
                       onPressed: () async {
                         await noteService.deleteNote(
                             note.id!, note.publicationId);
-                        pdfController.removeNote(note);
+                        pdfController.removeNote(urlId, note);
                         Get.showSnackbar(
                           const GetSnackBar(
                             message: 'Note deleted',

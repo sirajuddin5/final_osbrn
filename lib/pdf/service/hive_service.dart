@@ -56,7 +56,6 @@ class HiveService {
 
   // PDF Methods
   static Future<void> savePdf(DownloadedPdf pdf) async {
-    pdf.urlId = const Uuid().v4();
     final box = Hive.box<DownloadedPdf>(_pdfBox);
     await box.put(pdf.urlId, pdf);
   }

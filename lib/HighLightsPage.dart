@@ -123,7 +123,7 @@ class _HighlightsPageState extends State<HighlightsPage> {
                     ),
             )
           : NetworkList(
-              pdfController: pdfController, high: high, widget: widget),
+              pdfController: pdfController, high: high, widget: widget, urlId: widget.urlId!),
     );
   }
 }
@@ -219,19 +219,21 @@ class NetworkList extends StatelessWidget {
     required this.pdfController,
     required this.high,
     required this.widget,
+    required this.urlId,
   });
 
   final PdfController pdfController;
   final HighlightService high;
   final HighlightsPage widget;
+  final String urlId;
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() => pdfController.highlights.isNotEmpty
+    return Obx(() => (pdfController.highlightsMap[urlId] ?? []).isNotEmpty
         ? ListView.builder(
-            itemCount: pdfController.highlights.length,
+            itemCount: (pdfController.highlightsMap[urlId] ?? []).length,
             itemBuilder: (context, index) {
-              final highlight = pdfController.highlights[index];
+              final highlight = (pdfController.highlightsMap[urlId] ?? [])[index];
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: ListTile(
@@ -272,7 +274,7 @@ class NetworkList extends StatelessWidget {
                     onTap: () async {
                       try {
                         await high.deleteHighlight(highlight.id);
-                        pdfController.removeHighlight(highlight);
+                        pdfController.removeHighlight(urlId, highlight);
                       } catch (e) {
                         log("Error deleting highlight: $e");
                       }
