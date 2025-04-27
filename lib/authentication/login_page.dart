@@ -169,6 +169,9 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:osborn_book/getx/pdf_controller.dart';
 import 'package:osborn_book/pdf/service/hive_service.dart';
 
 import '../colors/colors.dart';
@@ -195,7 +198,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void initState() {
-
     super.initState();
   }
 

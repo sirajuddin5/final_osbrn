@@ -1,8 +1,9 @@
-
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:osborn_book/getx/pdf_controller.dart';
 
 import '../authentication/login_page.dart';
 import '../colors/colors.dart';
@@ -11,10 +12,10 @@ class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
 
   @override
-  State<OnboardingPage> createState() => _OnboardingPageState();
+  State<OnboardingPage> createState() => OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
+class OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,7 +44,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.initState();
     Timer(
       const Duration(seconds: 2),
-          () => Navigator.pushReplacement(
+      () => Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => const LoginPage())),
     );
   }

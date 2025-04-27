@@ -1,8 +1,14 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:osborn_book/getx/pdf_controller.dart';
 import 'package:osborn_book/pdf/app_state.dart';
 import 'package:osborn_book/pdf/models/local_highlight.dart';
 import 'package:osborn_book/pdf/service/highlight_service.dart';
 import 'package:osborn_book/pdf/service/hive_service.dart';
+import 'package:osborn_book/pdf/utils.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
@@ -22,12 +28,12 @@ class HighlightsPage extends StatefulWidget {
 }
 
 class _HighlightsPageState extends State<HighlightsPage> {
-  List<LocalHighlight>? localList;
+  RxList<LocalHighlight>? localList;
 
   @override
   void initState() {
     localList = widget.isLocal!
-        ? HiveService.getHighlightsForPdf(widget.urlId.toString())
+        ? HiveService.getHighlightsForPdf(widget.urlId.toString()).obs
         : null;
     super.initState();
   }
@@ -35,12 +41,107 @@ class _HighlightsPageState extends State<HighlightsPage> {
   @override
   Widget build(BuildContext context) {
     final high = HighlightService();
+    final pdfController = Get.find<PdfController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Highlights'),
+        title: const Text('Highlights'),
       ),
       body: widget.isLocal!
+          ? Obx(
+              () => localList != null && localList!.isNotEmpty
+                  ? ListView.builder(
+                      itemCount: localList!.length,
+                      itemBuilder: (context, index) {
+                        final highlight = localList![index];
+                        return Card(
+                          margin:
+                              EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: ListTile(
+                            title: Text(
+                              highlight.pdfTextLines.first.text,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                    'Page: ${highlight.pdfTextLines.first.pageNumber}'),
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 16,
+                                      height: 16,
+                                      margin: EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.yellowAccent,
+                                        border: Border.all(color: Colors.grey),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                    Text(
+                                      'Position: (${highlight.pdfTextLines.first.x.toStringAsFixed(1)}, ${highlight.pdfTextLines.first.y.toStringAsFixed(1)})',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  'Size: ${highlight.pdfTextLines.first.width.toStringAsFixed(1)} × ${highlight.pdfTextLines.first.height.toStringAsFixed(1)}',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            trailing: InkWell(
+                              onTap: () async {
+                                await HiveService.deleteHighlight(
+                                    widget.urlId!, highlight.id);
+                                localList?.removeWhere(
+                                    (element) => element.id == highlight.id);
+                                widget.pdfViewerController
+                                    ?.removeAllAnnotations();
+                                updateLocalAnnotations(
+                                    widget.urlId!, widget.pdfViewerController!);
+                              },
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                            ),
+                            onTap: () {
+                              widget.pdfViewerController?.jumpToPage(
+                                  highlight.pdfTextLines.first.pageNumber);
+
+                              Navigator.pop(context);
+                            },
+                          ),
+                        );
+                      },
+                    )
+                  : const Center(
+                      child: Text('No highlights found'),
+                    ),
+            )
+          : NetworkList(
+              pdfController: pdfController, high: high, widget: widget),
+    );
+  }
+}
+
+class LocalList extends StatelessWidget {
+  const LocalList({
+    super.key,
+    required this.localList,
+    required this.widget,
+  });
+
+  final RxList<LocalHighlight>? localList;
+  final HighlightsPage widget;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => localList != null && localList!.isNotEmpty
           ? ListView.builder(
               itemCount: localList!.length,
               itemBuilder: (context, index) {
@@ -84,8 +185,11 @@ class _HighlightsPageState extends State<HighlightsPage> {
                     ),
                     trailing: InkWell(
                       onTap: () async {
-                        await high.deleteHighlight(highlight.id);
-                        setState(() {});
+                        await HiveService.deleteHighlight(
+                            widget.urlId!, highlight.id);
+                        widget.pdfViewerController?.removeAllAnnotations();
+                        updateLocalAnnotations(
+                            widget.urlId!, widget.pdfViewerController!);
                       },
                       child: const Icon(
                         Icons.delete,
@@ -93,8 +197,8 @@ class _HighlightsPageState extends State<HighlightsPage> {
                       ),
                     ),
                     onTap: () {
-                      widget.pdfViewerController!
-                          .jumpToPage(highlight.pdfTextLines.first.pageNumber);
+                      widget.pdfViewerController
+                          ?.jumpToPage(highlight.pdfTextLines.first.pageNumber);
 
                       Navigator.pop(context);
                     },
@@ -102,85 +206,94 @@ class _HighlightsPageState extends State<HighlightsPage> {
                 );
               },
             )
-          : FutureBuilder(
-              future: high.getHighlights(widget.urlId!),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snap.hasError) {
-                  return const Center(
-                      child:
-                          Text('No hightlights found or something went wrong'));
-                }
-                final highlights = snap.data?.data ?? [];
-
-                if (highlights.isEmpty) {
-                  return const Center(child: Text('No highlights found'));
-                }
-
-                return ListView.builder(
-                  itemCount: highlights.length,
-                  itemBuilder: (context, index) {
-                    final highlight = highlights[index];
-                    return Card(
-                      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      child: ListTile(
-                        title: Text(
-                          highlight.pdfTextLines[0]['text'],
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                'Page: ${highlight.pdfTextLines[0]['pageNumber']}'),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 16,
-                                  height: 16,
-                                  margin: EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.yellowAccent,
-                                    border: Border.all(color: Colors.grey),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                Text(
-                                  'Position: (${highlight.pdfTextLines[0]['x'].toStringAsFixed(1)}, ${highlight.pdfTextLines[0]['y'].toStringAsFixed(1)})',
-                                  style: TextStyle(fontSize: 12),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Size: ${highlight.pdfTextLines[0]['width'].toStringAsFixed(1)} × ${highlight.pdfTextLines[0]['height'].toStringAsFixed(1)}',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
-                        trailing: InkWell(
-                          onTap: () async {
-                            await high.deleteHighlight(highlight.id);
-                            setState(() {});
-                          },
-                          child: const Icon(
-                            Icons.delete,
-                            color: Colors.red,
-                          ),
-                        ),
-                        onTap: () {
-                          widget.pdfViewerController!.jumpToPage(
-                              highlight.pdfTextLines[0]['pageNumber']);
-
-                          Navigator.pop(context);
-                        },
-                      ),
-                    );
-                  },
-                );
-              }),
+          : const Center(
+              child: Text('No highlights found'),
+            ),
     );
+  }
+}
+
+class NetworkList extends StatelessWidget {
+  const NetworkList({
+    super.key,
+    required this.pdfController,
+    required this.high,
+    required this.widget,
+  });
+
+  final PdfController pdfController;
+  final HighlightService high;
+  final HighlightsPage widget;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => pdfController.highlights.isNotEmpty
+        ? ListView.builder(
+            itemCount: pdfController.highlights.length,
+            itemBuilder: (context, index) {
+              final highlight = pdfController.highlights[index];
+              return Card(
+                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: ListTile(
+                  title: Text(
+                    highlight.pdfTextLines[0]['text'],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Page: ${highlight.pdfTextLines[0]['pageNumber']}'),
+                      Row(
+                        children: [
+                          Container(
+                            width: 16,
+                            height: 16,
+                            margin: EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.yellowAccent,
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Text(
+                            'Position: (${highlight.pdfTextLines[0]['x'].toStringAsFixed(1)}, ${highlight.pdfTextLines[0]['y'].toStringAsFixed(1)})',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        'Size: ${highlight.pdfTextLines[0]['width'].toStringAsFixed(1)} × ${highlight.pdfTextLines[0]['height'].toStringAsFixed(1)}',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  trailing: InkWell(
+                    onTap: () async {
+                      try {
+                        await high.deleteHighlight(highlight.id);
+                        pdfController.removeHighlight(highlight);
+                      } catch (e) {
+                        log("Error deleting highlight: $e");
+                      }
+                    },
+                    child: const Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
+                  ),
+                  onTap: () {
+                    widget.pdfViewerController!
+                        .jumpToPage(highlight.pdfTextLines[0]['pageNumber']);
+
+                    Navigator.pop(context);
+                  },
+                ),
+              );
+            },
+          )
+        : const Center(
+            child: Text('No highlights found'),
+          ));
   }
 }

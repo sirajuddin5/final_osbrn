@@ -97,12 +97,10 @@ class _CustomDrawerState extends State<CustomDrawer> {
               decoration: BoxDecoration(
                 color: Colors.deepPurple,
               ),
-              child: Expanded(
-                child: Image.asset(
-                  'images/osbrndrwr.png',
-                  height: media.height * 0.1,
-                  width: media.width * 0.65,
-                ),
+              child: Image.asset(
+                'images/osbrndrwr.png',
+                height: media.height * 0.1,
+                width: media.width * 0.65,
               ),
             ),
             ListTile(
@@ -111,11 +109,13 @@ class _CustomDrawerState extends State<CustomDrawer> {
               trailing: Icon(Icons.arrow_forward_ios, color: Colors.white),
               focusColor: Colors.green[900],
               selectedTileColor: Colors.green[900],
-              tileColor: _selectedItem == 'All Books' ? Color(0xff114f4d) : Colors.transparent,
+              tileColor: _selectedItem == 'All Books'
+                  ? Color(0xff114f4d)
+                  : Colors.transparent,
               onTap: () {
                 setState(() {
                   _selectedItem = 'All Books';
-                  Navigator.pop(context);// Update selected item
+                  Navigator.pop(context); // Update selected item
                 });
                 // Navigate to the All Books page
               },
@@ -124,7 +124,9 @@ class _CustomDrawerState extends State<CustomDrawer> {
               leading: Icon(Icons.save_alt, color: Colors.white),
               title: Text('On Device', style: TextStyle(color: Colors.white)),
               trailing: Icon(Icons.arrow_forward_ios, color: Colors.white),
-              tileColor: _selectedItem == 'On Device' ? Color(0xff114f4d) : Colors.transparent,
+              tileColor: _selectedItem == 'On Device'
+                  ? Color(0xff114f4d)
+                  : Colors.transparent,
               onTap: () {
                 Navigator.push(
                   context,
@@ -141,7 +143,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
             ListTile(
               leading: Icon(Icons.exit_to_app, color: Colors.white),
               title: Text('Sign Out', style: TextStyle(color: Colors.white)),
-              subtitle: Text('books@osbornebooks.co.uk', style: TextStyle(color: Colors.white)),
+              subtitle: Text('books@osbornebooks.co.uk',
+                  style: TextStyle(color: Colors.white)),
               onTap: () {
                 // Sign out logic
                 // _showLogoutDialog(context);

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:osborn_book/getx/pdf_controller.dart';
 import 'package:osborn_book/pdf/service/download_service.dart';
 import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:osborn_book/pdf/models/base_response_model.dart';
@@ -121,7 +122,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   updateHighlights() async {
     try {
       final res = await highlightService.getHighlights(widget.urlId);
-      log("log message " + res.toString());
+      log("log message ${res.toString()}");
 
       if (res.status ?? false) {
         for (var d in res.data!) {
@@ -174,15 +175,18 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
   Note? _note;
   List<Note> _notes = [];
 
+  final pdfController = Get.find<PdfController>();
+
   Widget _buildPdfViewer() {
     return Stack(children: [
       Column(
         children: [
           Expanded(
             child: SfPdfViewer.file(
+              canShowPaginationDialog: false,
               onAnnotationSelected: (annotation) {
                 if (annotation is StickyNoteAnnotation) {
-                  _selectedNote = _notes.firstWhere((note) {
+                  _selectedNote = pdfController.notes.firstWhere((note) {
                     if (note.page == annotation.pageNumber &&
                         note.x == annotation.position.dx &&
                         note.y == annotation.position.dy) {
@@ -213,8 +217,11 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 }
               },
               onDocumentLoaded: (details) async {
-                await updateHighlights();
-                await updateNotes();
+                final highlights =
+                    await HighlightService().getHighlights(widget.urlId);
+                final notes = await NoteService().getNotes(widget.urlId);
+                pdfController.init(_pdfViewerController, highlights.data ?? [],
+                    notes.data ?? []);
               },
               File(pdfPath),
               controller: _pdfViewerController,
@@ -233,12 +240,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
                   if (annotation is HighlightAnnotation) {
                     if (region != null) {
-                      final double x = region.left;
-                      final double y = region.top;
-                      final double width = region.width;
-                      final double height = region.height;
-                      final int color = annotation.color.value;
-
                       try {
                         if (_highlight != null) {
                           log("==============================================");
@@ -249,6 +250,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                           if (res.status ?? false) {
                             _highlight = null;
                             shouldUpdateHighlight = true;
+                            pdfController.addHighlight(_highlight!);
                             // await updateHighlights();
                             // await updateNotes();
                             Get.showSnackbar(
@@ -261,13 +263,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                       } catch (e) {
                         log("Error creating highlight: $e");
                       }
-
-                      // Provider.of<AppState>(context, listen: false).addHighlight(
-                      //   _pdfViewerController.pageNumber ??
-                      //       1, // Ensure non-null page number
-                      //   Provider.of<AppState>(context, listen: false).raam,
-                      //   x, y, width, height, color,
-                      // );
                     }
                   }
                 }
@@ -286,7 +281,6 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                     _selectionDetails = details;
                     log("[Text Selection Specifications] Updating Data with Selected Text: ${_selectionDetails!.selectedText}");
 
-                    // Update the state with the selected text
                     Provider.of<AppState>(context, listen: false)
                         .updateData(_selectionDetails!.selectedText as String);
 
@@ -439,6 +433,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   res = await noteService.createNote(
                     _note!,
                   );
+                  pdfController.addNote(_note!);
                 } else {
                   return;
                 }
@@ -447,15 +442,15 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 Get.showSnackbar(const GetSnackBar(
                     duration: Duration(seconds: 1),
                     message: "Note Added Successfully"));
-                _pdfViewerController.addAnnotation(StickyNoteAnnotation(
-                  pageNumber: pageNumber,
-                  text: _note!.text,
-                  position: Offset(
-                    _note!.x,
-                    _note!.y,
-                  ),
-                  icon: PdfStickyNoteIcon.note,
-                ));
+                // _pdfViewerController.addAnnotation(StickyNoteAnnotation(
+                //   pageNumber: pageNumber,
+                //   text: _note!.text,
+                //   position: Offset(
+                //     _note!.x,
+                //     _note!.y,
+                //   ),
+                //   icon: PdfStickyNoteIcon.note,
+                // ));
                 _notes.add(res.data!);
 
                 Navigator.of(context).pop();
@@ -578,24 +573,61 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
 
   // Show error dialog in case of failure.
   void showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final TextEditingController controller = TextEditingController();
+          Get.dialog(Dialog(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              height: 200,
+              child: Column(
+                children: [
+                  const Text("Navigate to a specific page",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                      "Choose from 1 to ${_pdfViewerController.pageCount} pages"),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                  ),
+                  ElevatedButton(
+                    child: Text("Go"),
+                    onPressed: () {
+                      _pdfViewerController
+                          .jumpToPage(int.parse(controller.text));
+                      Get.back();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ));
+        },
+        child: const Icon(Icons.next_plan_outlined),
+      ),
+      floatingActionButtonLocation: CustomFabLocation(),
       appBar: _showToolbar
           ? AppBar(
               flexibleSpace: SafeArea(
@@ -617,7 +649,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                       setState(() {
                         _textSearchKey.currentState?.showToast = true;
                       });
-                      await Future.delayed(Duration(seconds: 1));
+                      await Future.delayed(const Duration(seconds: 1));
                       setState(() {
                         _textSearchKey.currentState?.showToast = false;
                       });
@@ -662,7 +694,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                 children: [
                   Text(
                     'Loading: ${downloadProgress.toStringAsFixed(0)}%',
-                    style: TextStyle(fontSize: 18),
+                    style: const TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 20),
                   CircularProgressIndicator(value: downloadProgress / 100),
@@ -696,7 +728,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                           ),
                           IconButton(
                             // Add this new IconButton for the grid view
-                            icon: Icon(Icons.grid_view,
+                            icon: const Icon(Icons.grid_view,
                                 color: Colors.white, size: 28),
                             onPressed: () {
                               Navigator.push(
@@ -710,7 +742,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                             },
                           ),
                           IconButton(
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.highlight_rounded,
                               color: Colors.white,
                             ),
@@ -724,7 +756,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                             onPressed: _showNotes,
                           ),
                           IconButton(
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.bookmark_add,
                               color: Colors.white,
                               size: 28,
@@ -744,7 +776,7 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                                 );
                                 Get.showSnackbar(
                                   GetSnackBar(
-                                      duration: Duration(seconds: 1),
+                                      duration: const Duration(seconds: 1),
                                       message: 'Page $currentPage bookmarked'),
                                 );
                               } catch (e) {
@@ -779,5 +811,16 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
                   ],
                 ),
     );
+  }
+}
+
+class CustomFabLocation extends FloatingActionButtonLocation {
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry geometry) {
+    return Offset(
+        geometry.scaffoldSize.width -
+            geometry.floatingActionButtonSize.width -
+            20,
+        geometry.contentBottom - geometry.floatingActionButtonSize.height - 80);
   }
 }

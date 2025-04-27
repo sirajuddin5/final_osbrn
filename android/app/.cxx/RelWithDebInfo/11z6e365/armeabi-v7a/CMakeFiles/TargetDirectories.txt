@@ -1,0 +1,2 @@
+/media/ajay/Store/e-comm-freelance/final_osbrn/android/app/.cxx/RelWithDebInfo/11z6e365/armeabi-v7a/CMakeFiles/edit_cache.dir
+/media/ajay/Store/e-comm-freelance/final_osbrn/android/app/.cxx/RelWithDebInfo/11z6e365/armeabi-v7a/CMakeFiles/rebuild_cache.dir

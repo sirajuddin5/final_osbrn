@@ -1,4 +1,6 @@
+import 'dart:developer';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:osborn_book/pdf/models/bookmarks.dart';
 import 'package:osborn_book/pdf/models/downloaded_pdf.dart';
@@ -35,6 +37,21 @@ class HiveService {
     await Hive.openBox<LocalNote>(_notesBox);
     await Hive.openBox<LocalBookmark>(_bookmarksBox);
     await Hive.openBox(_configs);
+  }
+
+  static ValueListenable<Box<LocalNote>> getNotes() {
+    final box = Hive.box<LocalNote>(_notesBox);
+    return box.listenable();
+  }
+
+  static ValueListenable<Box<LocalHighlight>> getHighlights() {
+    final box = Hive.box<LocalHighlight>(_highlightsBox);
+    return box.listenable();
+  }
+
+  static ValueListenable<Box<LocalBookmark>> getBookmarks() {
+    final box = Hive.box<LocalBookmark>(_bookmarksBox);
+    return box.listenable();
   }
 
   // PDF Methods
@@ -86,6 +103,7 @@ class HiveService {
   static Future<void> saveHighlight(
       String pdfId, LocalHighlight highlight) async {
     highlight.id = const Uuid().v4();
+    log("Save highlight ${highlight.id} for $pdfId called");
     final box = Hive.box<LocalHighlight>(_highlightsBox);
     final key = '${pdfId}_${highlight.id}';
     await box.put(key, highlight);
@@ -93,6 +111,7 @@ class HiveService {
 
   static Future<void> deleteHighlight(String pdfId, String highlightId) async {
     final box = Hive.box<LocalHighlight>(_highlightsBox);
+    log("Delete highlight $highlightId for $pdfId called");
     final key = '${pdfId}_$highlightId';
     await box.delete(key);
   }
@@ -119,11 +138,13 @@ class HiveService {
   static Future<void> saveNote(String pdfId, LocalNote note) async {
     note.id = const Uuid().v4();
     final box = Hive.box<LocalNote>(_notesBox);
+    log("Save note ${note.id} for $pdfId called");
     final key = '${pdfId}_${note.id}';
     await box.put(key, note);
   }
 
   static Future<void> deleteNote(String pdfId, String noteId) async {
+    log("Delete note $noteId for $pdfId called");
     final box = Hive.box<LocalNote>(_notesBox);
     final key = '${pdfId}_$noteId';
     await box.delete(key);

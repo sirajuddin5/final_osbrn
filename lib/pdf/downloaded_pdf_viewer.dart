@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:osborn_book/HighLightsPage.dart';
+import 'package:osborn_book/getx/pdf_controller.dart';
 import 'package:osborn_book/pdf/bookmark_page.dart';
 import 'package:osborn_book/pdf/grid_page.dart';
 import 'package:osborn_book/pdf/models/bookmarks.dart';
@@ -247,6 +248,7 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
             child: SfPdfViewer.file(
               File(widget.pdfData.localPath),
               controller: _pdfViewerController,
+              canShowPaginationDialog: false,
               key: _pdfViewerKey,
               pageLayoutMode: PdfPageLayoutMode.single,
 
@@ -463,9 +465,47 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
     ]);
   }
 
+  final PdfController pdfController = Get.put(PdfController());
+
   @override
   Widget build(BuildContext context) {
+    pdfController.init(_pdfViewerController, [], []);
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final TextEditingController controller = TextEditingController();
+          Get.dialog(Dialog(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              height: 200,
+              child: Column(
+                children: [
+                  const Text("Navigate to a specific page",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                      "Choose from 1 to ${_pdfViewerController.pageCount} pages"),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                  ),
+                  ElevatedButton(
+                    child: Text("Go"),
+                    onPressed: () {
+                      _pdfViewerController
+                          .jumpToPage(int.parse(controller.text));
+                      Get.back();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ));
+        },
+        child: const Icon(Icons.next_plan_outlined),
+      ),
+      floatingActionButtonLocation: CustomFabLocation(),
       appBar: _showToolbar
           ? AppBar(
               flexibleSpace: SafeArea(
@@ -609,5 +649,16 @@ class _DownloadedPdfViewerPageState extends State<DownloadedPdfViewerPage> {
         ),
       ),
     );
+  }
+}
+
+class CustomFabLocation extends FloatingActionButtonLocation {
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry geometry) {
+    return Offset(
+        geometry.scaffoldSize.width -
+            geometry.floatingActionButtonSize.width -
+            20,
+        geometry.contentBottom - geometry.floatingActionButtonSize.height - 30);
   }
 }

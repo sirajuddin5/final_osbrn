@@ -345,6 +345,9 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:osborn_book/getx/pdf_controller.dart';
 import '../networking/fetch_response.dart';
 import '../networking/publication_model.dart';
 import '../publication_screen.dart';

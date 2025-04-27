@@ -1,13 +1,13 @@
 // note_model.dart
 class Note {
-  final String? id;
-  final String publicationId;
-  final int page;
-  final double x;
-  final double y;
-  final String color;
-  final String text;
-  final String? createdAt;
+   String? id;
+   String publicationId;
+   int page;
+   double x;
+   double y;
+   String color;
+   String text;
+   String? createdAt;
 
   Note({
     this.id,
